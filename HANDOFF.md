@@ -1,14 +1,62 @@
 # Chess MVP — Phase 1 Handoff
 
-## Where we left off (resume point)
+## Immediate resume point — Milestone 8 (deployment), blocked on GitHub setup
+Milestones 1–7 (the whole real-time 1v1 multiplayer feature) are done
+and verified — see the section below for the full build summary. This
+project is now a git repo with one local commit (`git log` will show
+"Initial commit: Chess MVP with council commentary and 1v1 multiplayer")
+containing everything through Milestone 7. **Nothing has been pushed to
+GitHub yet.**
+
+**What happened and why it's not pushed**: first tried pushing to
+`saswat-alchemist/Chess-module` on GitHub, which turned out to be an
+**organization**, not a personal account — got a clean `403 Permission
+to saswat-alchemist/Chess-module.git denied to saswat-alchemist` even
+with a correctly-scoped classic PAT, which is the signature of an org
+that restricts personal-access-token access (needs either SSO
+authorization on the token or an org owner to allow PATs under
+Organization Settings → Third-party Access). Decision made: skip the org
+entirely and set this up under a **personal** GitHub account instead, so
+there's no permission layer to fight — full end-to-end ownership.
+
+**Two PATs were pasted directly into chat during this troubleshooting
+and are dead**: one got revoked proactively (correct call), the second
+(a classic token, `repo` scope) is still live as far as I know — **revoke
+it too** at [github.com/settings/tokens](https://github.com/settings/tokens)
+before continuing, same reasoning as always: anything pasted in a chat
+transcript should be treated as burned regardless of whether it still
+technically works.
+
+**To actually resume this**:
+1. Create a new repo under your **personal** GitHub account (not
+   `saswat-alchemist`) at [github.com/new](https://github.com/new) —
+   empty, no README/gitignore (local commits already exist).
+2. Tell me the repo URL — I'll run `git remote add origin <url>` (the
+   old `saswat-alchemist` remote was already removed, clean slate).
+3. Generate a fresh classic PAT (**never paste it in chat** — go
+   straight to your terminal with it) at
+   [github.com/settings/tokens/new](https://github.com/settings/tokens/new),
+   `repo` scope checkbox only.
+4. Run `git push -u origin main` yourself in your terminal (not through
+   me — same reasoning as the token handling): username is your GitHub
+   username, password is the token (paste it — the terminal shows
+   nothing at all while typing/pasting into a password prompt, that's
+   normal, not a bug).
+5. Once pushed, next is connecting Vercel (frontend) + Render (backend)
+   — you said you still need to create accounts for both; I can't create
+   accounts on your behalf (same rule as everything else external this
+   project has needed: Neon, Google Cloud, GitHub).
+
+## Multiplayer build summary (Milestones 1–7, complete)
 All external services are wired up and confirmed working: Anthropic
 (council commentary), Google OAuth, and Neon Postgres. All credentials
-are already in `server/.env` and root `.env`. **To resume**:
+are already in `server/.env` and root `.env`. **To resume local dev**:
 `npm run dev:all` from the project root starts both servers, then open
 http://localhost:5173.
 
-**Real-time 1v1 "Play a friend" is built** (Socket.io), in eight
-verified milestones — each one tested before the next was built on it:
+**Real-time 1v1 "Play a friend" is built** (Socket.io), in seven
+verified milestones — each one tested before the next was built on it
+(deployment is the 8th and final milestone, in progress — see above):
 
 1. **Bare transport** — `server/index.js` now runs `http.createServer(app)`
    with a Socket.io server attached, not a plain `app.listen()`.
