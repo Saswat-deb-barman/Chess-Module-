@@ -8,8 +8,12 @@ import { migrate, saveGame, listGames, updateGameRecap, getGame } from "./db.js"
 import { requireAuth, verifyGoogleToken } from "./auth.js";
 import { registerSocketHandlers } from "./socket.js";
 
+const allowedOrigins = (
+  process.env.CLIENT_ORIGIN || "http://localhost:5173,https://chess-module.vercel.app"
+).split(",");
+
 const app = express();
-app.use(cors());
+app.use(cors({ origin: allowedOrigins }));
 app.use(express.json());
 
 app.post("/council/ping", async (req, res) => {
@@ -68,10 +72,7 @@ app.post("/games/:id/ask", requireAuth, async (req, res) => {
 
 const server = createServer(app);
 
-// CORS wide open for now (matches local dev across any port) — tightened to
-// the real deployed frontend origin in the deployment milestone, same pass
-// as Express's own cors() lockdown.
-const io = new Server(server, { cors: { origin: "*" } });
+const io = new Server(server, { cors: { origin: allowedOrigins } });
 
 // io.use only runs once, at handshake time — a token that expires mid-game
 // won't disconnect anyone. That's intentional: nobody should get booted
