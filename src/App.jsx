@@ -6,7 +6,7 @@ import MultiplayerBoard from "./components/MultiplayerBoard.jsx";
 import SignInButton from "./components/SignInButton.jsx";
 import GameHistory from "./components/GameHistory.jsx";
 import { useAuth } from "./lib/auth.jsx";
-import { saveGame, updateGameRecap } from "./lib/games.js";
+import { saveGame, updateGameRecap, updateGameCouncilReport } from "./lib/games.js";
 
 export default function App() {
   const { user, idToken, signOut } = useAuth();
@@ -65,6 +65,22 @@ export default function App() {
     }
   }
 
+  // The full Chess Council report resolves later still than the recap —
+  // it needs client-side engine analysis to finish first (see Board.jsx's
+  // runCouncilAnalysis) — so this is a second, independent follow-up
+  // patch, same fire-and-forget shape as handleRecap. `report` can be
+  // null (LLM call failed soft); still worth persisting definingMoves
+  // alone so the move timeline shows up even without persona narration.
+  function handleCouncilReport({ definingMoves, report }) {
+    if (savedGameId && user && idToken) {
+      updateGameCouncilReport(idToken, savedGameId, { definingMoves, report }, { onUnauthorized: signOut }).then(
+        (updated) => {
+          if (updated) setHistoryRefreshKey((k) => k + 1);
+        }
+      );
+    }
+  }
+
   return (
     <main className="app">
       <SignInButton />
@@ -100,7 +116,13 @@ export default function App() {
           )}
 
           {phase !== "setup" && (
-            <Board key={gameKey} difficulty={difficulty} onGameEnd={handleGameEnd} onRecap={handleRecap} />
+            <Board
+              key={gameKey}
+              difficulty={difficulty}
+              onGameEnd={handleGameEnd}
+              onRecap={handleRecap}
+              onCouncilReport={handleCouncilReport}
+            />
           )}
 
           {phase === "ended" && (

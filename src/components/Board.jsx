@@ -2,10 +2,12 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { Chessboard } from "react-chessboard";
 import { createGame, tryMove, getGameOverReason, getResultTag, toFen, toPgn } from "../lib/gameLogic.js";
 import { Engine, parseUciMove } from "../engine/stockfishWorker.js";
-import { pingCouncil, recapCouncil } from "../lib/council.js";
+import { pingCouncil, recapCouncil, reportCouncil } from "../lib/council.js";
+import { analyzeGame } from "../lib/gameAnalysis.js";
 import Clock, { INITIAL_TIMES } from "./Clock.jsx";
 import MoveHistory from "./MoveHistory.jsx";
 import CouncilPanel from "./CouncilPanel.jsx";
+import CouncilReport from "./CouncilReport.jsx";
 
 // Human always plays White in Phase 1 — a color picker is a cheap add
 // later but isn't needed to validate the core loop.
@@ -28,12 +30,13 @@ function detectMoment(game, move) {
   return null;
 }
 
-export default function Board({ difficulty, onGameEnd, onRecap }) {
+export default function Board({ difficulty, onGameEnd, onRecap, onCouncilReport }) {
   const gameRef = useRef(
     createGame({ white: "Human", black: `Stockfish (${capitalize(difficulty)})` })
   );
   const engineRef = useRef(null);
   const timesRef = useRef({ ...INITIAL_TIMES });
+  const unmountedRef = useRef(false);
 
   const [fen, setFen] = useState(toFen(gameRef.current));
   const [pgn, setPgn] = useState("");
@@ -41,6 +44,9 @@ export default function Board({ difficulty, onGameEnd, onRecap }) {
   const [botThinking, setBotThinking] = useState(false);
   const [councilMessages, setCouncilMessages] = useState([]);
   const [recap, setRecap] = useState(null);
+  const [definingMoves, setDefiningMoves] = useState([]);
+  const [councilReport, setCouncilReport] = useState(null);
+  const [councilAnalyzing, setCouncilAnalyzing] = useState(false);
 
   // Fire-and-forget: the council is commentary, never gameplay-blocking.
   const firePing = useCallback((game, move) => {
@@ -55,11 +61,42 @@ export default function Board({ difficulty, onGameEnd, onRecap }) {
     const engine = new Engine();
     engine.setDifficulty(difficulty);
     engineRef.current = engine;
-    return () => engine.destroy();
+    return () => {
+      unmountedRef.current = true;
+      engine.destroy();
+    };
     // difficulty is locked once a game starts (enforced in App.jsx), so
     // this effect intentionally only runs once per Board mount.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Post-game "Council Report": reuses the same engine instance that just
+  // played (Skill Level only weakens which move it CHOOSES, not how it
+  // SCORES a position — see Engine.analyzePosition — so no strength reset
+  // is needed here) to flag defining moves, then asks the 5 personas to
+  // narrate them. Guarded against a "New game" click firing before this
+  // finishes and terminating the worker mid-analysis (unmountedRef) —
+  // that just means the report never lands for a game nobody's looking at
+  // anymore, not a crash.
+  const runCouncilAnalysis = useCallback(
+    async (finishedPgn, resultTag) => {
+      if (!engineRef.current) return;
+      setCouncilAnalyzing(true);
+      try {
+        const { definingMoves: flagged } = await analyzeGame(finishedPgn, engineRef.current, { depth: 12 });
+        if (unmountedRef.current) return;
+        setDefiningMoves(flagged);
+
+        const report = await reportCouncil({ pgn: finishedPgn, result: resultTag, definingMoves: flagged });
+        if (unmountedRef.current) return;
+        if (report) setCouncilReport(report);
+        onCouncilReport?.({ definingMoves: flagged, report });
+      } finally {
+        if (!unmountedRef.current) setCouncilAnalyzing(false);
+      }
+    },
+    [onCouncilReport]
+  );
 
   const endGame = useCallback((reason, { flagFallWinner, resignedBy } = {}) => {
     const game = gameRef.current;
@@ -82,7 +119,8 @@ export default function Board({ difficulty, onGameEnd, onRecap }) {
         onRecap?.(message);
       }
     });
-  }, [onGameEnd, onRecap, difficulty]);
+    runCouncilAnalysis(pgn, result);
+  }, [onGameEnd, onRecap, difficulty, runCouncilAnalysis]);
 
   const requestBotMove = useCallback(async () => {
     const game = gameRef.current;
@@ -160,6 +198,9 @@ export default function Board({ difficulty, onGameEnd, onRecap }) {
       {status && <p className="game-status">{status}</p>}
       <MoveHistory pgn={pgn} />
       <CouncilPanel messages={councilMessages} recap={recap} />
+      {status && (
+        <CouncilReport definingMoves={definingMoves} report={councilReport} loading={councilAnalyzing} />
+      )}
     </div>
   );
 }

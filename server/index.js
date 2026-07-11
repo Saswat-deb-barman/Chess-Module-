@@ -3,8 +3,8 @@ import { createServer } from "http";
 import express from "express";
 import cors from "cors";
 import { Server } from "socket.io";
-import { getPing, getRecap, answerQuestion } from "./council.js";
-import { migrate, saveGame, listGames, updateGameRecap, getGame } from "./db.js";
+import { getPing, getRecap, getCouncilReport, answerQuestion } from "./council.js";
+import { migrate, saveGame, listGames, updateGameRecap, updateGameCouncilReport, getGame } from "./db.js";
 import { requireAuth, verifyGoogleToken } from "./auth.js";
 import { registerSocketHandlers } from "./socket.js";
 
@@ -26,6 +26,17 @@ app.post("/council/recap", async (req, res) => {
   const { pgn } = req.body ?? {};
   const message = await getRecap({ pgn });
   res.json({ message });
+});
+
+// The deep 5-persona breakdown. Unauthenticated like the other council
+// endpoints (commentary isn't gated behind sign-in) — `definingMoves`
+// comes pre-computed from the client's own engine analysis
+// (src/lib/gameAnalysis.js); this endpoint's only job is the LLM
+// narration layer on top of that objective data.
+app.post("/council/report", async (req, res) => {
+  const { pgn, result, definingMoves } = req.body ?? {};
+  const report = await getCouncilReport({ pgn, result, definingMoves });
+  res.json({ report });
 });
 
 app.post("/games", requireAuth, async (req, res) => {
@@ -54,8 +65,15 @@ app.get("/games", requireAuth, async (req, res) => {
 });
 
 app.patch("/games/:id", requireAuth, async (req, res) => {
-  const { recap } = req.body ?? {};
-  const game = await updateGameRecap({ googleSub: req.identity.sub, gameId: req.params.id, recap });
+  const { recap, councilReport } = req.body ?? {};
+  // Both fields arrive independently and asynchronously (recap is the
+  // quick Haiku/Sonnet one-liner, councilReport is the slower 5-persona
+  // breakdown that needs client-side engine analysis first) — only patch
+  // whichever one the caller actually sent, so an update to one never
+  // wipes the other back to null.
+  const game = recap !== undefined
+    ? await updateGameRecap({ googleSub: req.identity.sub, gameId: req.params.id, recap })
+    : await updateGameCouncilReport({ googleSub: req.identity.sub, gameId: req.params.id, councilReport });
   res.json({ game });
 });
 

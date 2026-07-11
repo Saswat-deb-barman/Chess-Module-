@@ -36,6 +36,12 @@ export async function migrate() {
     alter table games alter column difficulty drop not null;
     create index if not exists games_white_google_sub_idx on games (white_google_sub);
     create index if not exists games_black_google_sub_idx on games (black_google_sub);
+    -- Chess Council module: the structured 5-persona report + engine-
+    -- flagged defining moves, kept separate from the short "recap" text
+    -- column above (recap stays the quick one-liner; council_report is
+    -- the deep breakdown). jsonb, not a new table — same one-table
+    -- philosophy as the rest of this schema.
+    alter table games add column if not exists council_report jsonb;
   `);
 }
 
@@ -59,7 +65,7 @@ export async function saveGame({
        (google_sub, google_email, white, black, difficulty, result, pgn,
         white_google_sub, white_google_email, black_google_sub, black_google_email, mode)
      values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-     returning id, white, black, difficulty, result, pgn, recap, played_at, mode,
+     returning id, white, black, difficulty, result, pgn, recap, council_report, played_at, mode,
                white_google_sub, black_google_sub`,
     [
       googleSub,
@@ -95,9 +101,27 @@ export async function updateGameRecap({ googleSub, gameId, recap }) {
   const { rows } = await pool.query(
     `update games set recap = $1
      where id = $2 and (google_sub = $3 or white_google_sub = $3 or black_google_sub = $3)
-     returning id, white, black, difficulty, result, pgn, recap, played_at, mode,
+     returning id, white, black, difficulty, result, pgn, recap, council_report, played_at, mode,
                white_google_sub, black_google_sub`,
     [recap, gameId, googleSub]
+  );
+  return rows[0] ?? null;
+}
+
+/**
+ * Same arrives-later pattern as updateGameRecap, for the fuller Chess
+ * Council report (5 personas + defining moves). Stored as jsonb, so the
+ * object is JSON.stringify'd before binding — pg does not auto-serialize
+ * plain JS objects passed as query params, even into a jsonb column.
+ */
+export async function updateGameCouncilReport({ googleSub, gameId, councilReport }) {
+  if (!pool) return null;
+  const { rows } = await pool.query(
+    `update games set council_report = $1
+     where id = $2 and (google_sub = $3 or white_google_sub = $3 or black_google_sub = $3)
+     returning id, white, black, difficulty, result, pgn, recap, council_report, played_at, mode,
+               white_google_sub, black_google_sub`,
+    [JSON.stringify(councilReport), gameId, googleSub]
   );
   return rows[0] ?? null;
 }
@@ -110,7 +134,7 @@ export async function updateGameRecap({ googleSub, gameId, recap }) {
 export async function getGame({ googleSub, gameId }) {
   if (!pool) return null;
   const { rows } = await pool.query(
-    `select id, white, black, difficulty, result, pgn, recap, played_at, mode,
+    `select id, white, black, difficulty, result, pgn, recap, council_report, played_at, mode,
             white_google_sub, black_google_sub
      from games where id = $1 and (google_sub = $2 or white_google_sub = $2 or black_google_sub = $2)`,
     [gameId, googleSub]
@@ -121,7 +145,7 @@ export async function getGame({ googleSub, gameId }) {
 export async function listGames(googleSub) {
   if (!pool) return [];
   const { rows } = await pool.query(
-    `select id, white, black, difficulty, result, pgn, recap, played_at, mode,
+    `select id, white, black, difficulty, result, pgn, recap, council_report, played_at, mode,
             white_google_sub, black_google_sub
      from games where google_sub = $1 or white_google_sub = $1 or black_google_sub = $1
      order by played_at desc

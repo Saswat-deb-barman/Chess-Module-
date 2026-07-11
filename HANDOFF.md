@@ -47,6 +47,72 @@ technically works.
    accounts on your behalf (same rule as everything else external this
    project has needed: Neon, Google Cloud, GitHub).
 
+## Chess Council module — 5-persona post-game analysis (new, solo-vs-bot only)
+Built on top of the existing lightweight "council" (live pings + one-line
+recap, both still unchanged) to add the deeper post-game breakdown Saswat
+already does by hand outside this app: five named coaching personas (The
+Historian, Tactics Tara, Strategist Sam, Endgame Ed, Coach Priya — same
+framing as his external game analysis, kept identical on purpose) plus an
+engine-flagged list of the game's "defining moves." Renders as a new
+**Council Report** panel under the existing council ping panel once a
+game ends, and persists to game history the same way recap already does.
+
+**Architecture, hybrid by design**: the engine does the objective
+detection, the LLM does the narration — never the other way around.
+1. `src/engine/stockfishWorker.js` — `Engine.analyzePosition(fen, {depth})`
+   is new, separate from `getBestMove`. Returns `{evalCp, mate, bestMove}`
+   by parsing `info ... score cp/mate` lines. Deliberately doesn't touch
+   Skill Level — that setting only weakens which move the engine *chooses*
+   during play, not how accurately it *scores* a position, so the same
+   engine instance that just played the game is reused for its own
+   analysis afterward at a fixed depth (12), no second engine needed.
+2. `src/lib/gameAnalysis.js` — `analyzeGame(pgn, engine)` replays the
+   finished PGN ply-by-ply, evals each resulting position, and computes
+   each move's centipawn swing from the *mover's own* perspective
+   (isolating "did this move make their own position worse than it
+   already was" from "the opponent had already blundered earlier").
+   Classifies blunder/mistake/inaccuracy/excellent/normal by threshold,
+   always includes the checkmating move + final move + first blunder
+   regardless of magnitude, then fills remaining slots (capped at 6) by
+   largest swing. This is the piece HANDOFF previously flagged as
+   deliberately deferred ("needs stockfishWorker.js to parse live info
+   lines, not just bestmove") — now built.
+3. `server/council.js` — `getCouncilReport({pgn, result, definingMoves})`
+   is a single Sonnet call (not 5 separate persona calls, for cost/latency)
+   with a strict-JSON response contract: one paragraph per persona plus a
+   `definingMoveNotes[]` array giving each flagged move a one-sentence
+   caption in whichever persona's voice fits. Same fail-soft-to-null
+   contract as `getPing`/`getRecap` — a parse failure or missing key
+   never blocks the post-game screen.
+4. New endpoint `POST /council/report`, unauthenticated like the other
+   council routes. `PATCH /games/:id` now branches on whether the body
+   has `recap` or `councilReport` so patching one never blanks the other.
+5. `games.council_report` — new `jsonb` column (`alter table ... add
+   column if not exists`, same zero-migration-framework pattern as
+   `recap`). Stores `{definingMoves, report}` as one object; `report` can
+   be `null` if the LLM call failed but `definingMoves` still came from
+   the engine, so the move timeline still shows up even without persona
+   prose in that case.
+6. `src/components/CouncilReport.jsx` — new component, rendered in both
+   `Board.jsx` (live, right after `endGame`) and `GameHistory.jsx`'s
+   `GameRow` (from the persisted column). Classification badges are
+   color-coded (blunder=red through excellent=green) in `App.css`.
+
+**Deliberately scoped to solo-vs-bot only — friend mode is NOT wired up
+yet, on purpose, not an oversight**: `MultiplayerBoard.jsx` has no engine
+instance of its own (`server/socket.js` is authoritative for the game but
+has no Stockfish; the browser-side engine only exists in `Board.jsx`), and
+`socket.js`'s existing recap flow deliberately guarantees *exactly one*
+recap call server-side, specifically to avoid both players' clients firing
+duplicate LLM calls (see Milestone 6 above). Doing the same for defining-
+move analysis client-side risks re-introducing exactly that duplicate-call
+problem — whichever client computes `definingMoves` first would need to be
+the only one that submits it, which has no clean answer yet without a new
+socket-level "first submission wins" coordination step. Revisit once
+solo-mode's version has been used for a while and it's clear the
+approach (and the ~10s client-side analysis time for a full game) is
+worth carrying over, not before.
+
 ## Multiplayer build summary (Milestones 1–7, complete)
 All external services are wired up and confirmed working: Anthropic
 (council commentary), Google OAuth, and Neon Postgres. All credentials

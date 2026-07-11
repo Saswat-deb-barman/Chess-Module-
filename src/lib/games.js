@@ -50,6 +50,16 @@ export async function updateGameRecap(idToken, gameId, recap, { onUnauthorized }
   return data?.game ?? null;
 }
 
+export async function updateGameCouncilReport(idToken, gameId, councilReport, { onUnauthorized } = {}) {
+  const data = await request(`/games/${gameId}`, {
+    method: "PATCH",
+    body: { councilReport },
+    idToken,
+    onUnauthorized,
+  });
+  return data?.game ?? null;
+}
+
 export async function askAboutGame(idToken, gameId, question, { onUnauthorized } = {}) {
   const data = await request(`/games/${gameId}/ask`, { method: "POST", body: { question }, idToken, onUnauthorized });
   return data?.answer ?? null;

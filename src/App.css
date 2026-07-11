@@ -388,3 +388,126 @@ h1 {
   line-height: 1.4;
   margin-top: 8px;
 }
+
+.council-report {
+  margin-top: 20px;
+  text-align: left;
+}
+
+.council-report h3 {
+  font-size: 0.85rem;
+  color: #666;
+  margin-bottom: 6px;
+}
+
+.council-report-loading {
+  font-size: 0.85rem;
+  color: #999;
+  font-style: italic;
+}
+
+.defining-moves {
+  list-style: none;
+  margin: 0 0 16px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.defining-move {
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: #f0f0ee;
+  border-left: 3px solid #ccc;
+}
+
+.defining-move-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.defining-move-tag {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: #ddd;
+  color: #555;
+}
+
+.defining-move-san {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.defining-move-caption {
+  font-size: 0.8rem;
+  color: #555;
+  margin: 4px 0 0;
+  line-height: 1.4;
+}
+
+.defining-move-blunder {
+  background: #fbeeee;
+  border-left-color: #c94f4f;
+}
+.defining-move-blunder .defining-move-tag {
+  background: #c94f4f;
+  color: white;
+}
+
+.defining-move-mistake {
+  background: #fbf3ea;
+  border-left-color: #c98a4f;
+}
+.defining-move-mistake .defining-move-tag {
+  background: #c98a4f;
+  color: white;
+}
+
+.defining-move-inaccuracy {
+  background: #fbf8ea;
+  border-left-color: #c9b64f;
+}
+.defining-move-inaccuracy .defining-move-tag {
+  background: #c9b64f;
+  color: white;
+}
+
+.defining-move-excellent {
+  background: #eef5ef;
+  border-left-color: #2d6a4f;
+}
+.defining-move-excellent .defining-move-tag {
+  background: #2d6a4f;
+  color: white;
+}
+
+.council-personas {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.council-persona {
+  background: #f3ede0;
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.council-persona h4 {
+  margin: 0 0 4px;
+  font-size: 0.8rem;
+  color: #333;
+}
+
+.council-persona p {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: #333;
+}
