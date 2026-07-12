@@ -9,8 +9,8 @@ import {
   startCleanupSweep,
 } from "./rooms.js";
 import { tryMove, getGameOverReason, getResultTag, detectMoment, toFen, toPgn } from "./gameEngine.js";
-import { saveGame, updateGameRecap } from "./db.js";
-import { getPing, getRecap } from "./council.js";
+import { saveGame, updateGameRecap, updateGameCouncilReport } from "./db.js";
+import { getPing, getRecap, getCouncilReport } from "./council.js";
 
 /**
  * Milestone 3: the server now holds the authoritative chess.js instance
@@ -78,6 +78,16 @@ export function registerSocketHandlers(io) {
         console.error("Failed to attach recap to friend game:", err.message);
       }
     });
+
+    // The deep Council Report needs engine-computed defining moves,
+    // which this server has no way to produce itself — running
+    // Stockfish's WASM build directly in Node turned out to be
+    // unreliable, so the analysis stays client-side (see
+    // MultiplayerBoard.jsx, reusing solo mode's browser engine).
+    // Retained here for the "submitDefiningMoves" handler below.
+    room.savedGameId = saved?.id ?? null;
+    room.viewerSub = viewerSub;
+    room.finishedResult = result;
   }
 
   io.on("connection", (socket) => {
@@ -146,6 +156,32 @@ export function registerSocketHandlers(io) {
         reason: getGameOverReason(room.game, { flagFallWinner: winner }),
         result: getResultTag(room.game, { flagFallWinner: winner }),
       });
+    });
+
+    // Either client may submit — whichever browser's local Stockfish
+    // finishes analyzing first (see MultiplayerBoard.jsx). The actually
+    // duplicable, actually costly part isn't the local engine analysis
+    // (free, client-side) but the LLM call + persistence, so that's the
+    // only piece guarded against duplication, same class of fix
+    // Milestone 6 already applied to the simple recap.
+    socket.on("submitDefiningMoves", async (definingMoves) => {
+      const room = findRoomBySocketId(socket.id);
+      if (!room || !room.ended || room.reportRequested) return;
+      room.reportRequested = true;
+
+      const report = await getCouncilReport({ pgn: toPgn(room.game), result: room.finishedResult, definingMoves });
+      io.to(room.code).emit("councilReport", { definingMoves, report });
+
+      if (!room.savedGameId) return;
+      try {
+        await updateGameCouncilReport({
+          googleSub: room.viewerSub,
+          gameId: room.savedGameId,
+          councilReport: { definingMoves, report },
+        });
+      } catch (err) {
+        console.error("Failed to attach council report to friend game:", err.message);
+      }
     });
 
     socket.on("disconnect", () => {

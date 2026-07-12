@@ -150,20 +150,33 @@ detection, the LLM does the narration — never the other way around.
    `GameRow` (from the persisted column). Classification badges are
    color-coded (blunder=red through excellent=green) in `App.css`.
 
-**Deliberately scoped to solo-vs-bot only — friend mode is NOT wired up
-yet, on purpose, not an oversight**: `MultiplayerBoard.jsx` has no engine
-instance of its own (`server/socket.js` is authoritative for the game but
-has no Stockfish; the browser-side engine only exists in `Board.jsx`), and
-`socket.js`'s existing recap flow deliberately guarantees *exactly one*
-recap call server-side, specifically to avoid both players' clients firing
-duplicate LLM calls (see Milestone 6 above). Doing the same for defining-
-move analysis client-side risks re-introducing exactly that duplicate-call
-problem — whichever client computes `definingMoves` first would need to be
-the only one that submits it, which has no clean answer yet without a new
-socket-level "first submission wins" coordination step. Revisit once
-solo-mode's version has been used for a while and it's clear the
-approach (and the ~10s client-side analysis time for a full game) is
-worth carrying over, not before.
+**Now wired up for friend mode too** — originally deferred (see git
+history if curious why), then built once solo mode's version had been
+verified. `server/socket.js` has no chess engine of its own — a real
+attempt to run Stockfish's WASM build directly in Node (both
+`require()`'d in-process and spawned as a child process) reliably stalled
+after the engine's first identification line, on this Node version; not
+worth fighting further given a simpler option existed. So the analysis
+still runs client-side in `MultiplayerBoard.jsx` (now has its own `Engine`
+instance, mirroring `Board.jsx`'s StrictMode-safe pattern), and **both**
+players' clients compute `definingMoves` independently on game-over and
+call `socket.emit("submitDefiningMoves", ...)`. The insight that unblocked
+this: the actual risk was never the local engine analysis running twice
+(free, client-side, no external cost) — it was a duplicate **LLM call +
+persistence**, the same class of problem Milestone 6 solved for the
+recap. So `server/socket.js`'s new `"submitDefiningMoves"` handler guards
+only that part with a `room.reportRequested` flag — first submission
+wins and calls `getCouncilReport` + persists; the server then broadcasts
+`"councilReport"` to **both** clients regardless of which one it accepted,
+so the "losing" submitter's UI still gets the canonical result instead of
+hanging. Verified by replicating the exact handler logic against the real
+`getCouncilReport`/`updateGameCouncilReport` functions under a real
+`Promise.all` race (simulating both clients submitting simultaneously) —
+confirmed exactly one LLM call fires and the row persists correctly; test
+row cleaned up from Neon afterward. Not yet verified via an actual live
+two-human friend game (still blocked on the same auth-gating limitation
+noted in Milestones 4-6 — no way to get a real signed-in second identity
+into an automated test browser).
 
 ## Multiplayer build summary (Milestones 1–7, complete)
 All external services are wired up and confirmed working: Anthropic
@@ -261,8 +274,11 @@ Google accounts in two real browser tabs, play a full friend game
 including a capture/check (for a live council ping), let it reach
 checkmate or resign, and confirm both players' dashboards show the game
 with the correct opponent and can each ask their own follow-up question.
-This needs a real second Google account, which is why it hasn't been
-done yet (automated test browsers have no signed-in identity to use).
+Now that the Council Report is wired into friend mode too, this test
+should also confirm the 5-persona breakdown actually renders for both
+players once the game ends (not just the lightweight recap). This needs
+a real second Google account, which is why it hasn't been done yet
+(automated test browsers have no signed-in identity to use).
 
 ## What this is
 A bot-only, single-player chess app. No accounts, no database, no

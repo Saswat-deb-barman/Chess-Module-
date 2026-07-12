@@ -2,7 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import { Chessboard } from "react-chessboard";
 import { createGame, tryMove, toFen } from "../lib/gameLogic.js";
 import { socket } from "../lib/multiplayerSocket.js";
+import { Engine } from "../engine/stockfishWorker.js";
+import { analyzeGame } from "../lib/gameAnalysis.js";
 import CouncilPanel from "./CouncilPanel.jsx";
+import CouncilReport from "./CouncilReport.jsx";
 
 /**
  * Keeps its own local chess.js instance so onPieceDrop can keep returning
@@ -18,13 +21,43 @@ import CouncilPanel from "./CouncilPanel.jsx";
  * unlike solo mode) — "councilPing"/"councilRecap" just arrive over the
  * socket and get appended to local state, reusing the same CouncilPanel
  * component solo mode uses.
+ *
+ * The deeper Council Report is different: the server has no chess engine
+ * of its own (running Stockfish's WASM build directly in Node turned out
+ * to be unreliable), so *this* client runs the same browser-side analysis
+ * solo mode uses (Engine + analyzeGame) and submits the result to the
+ * server. Both players' clients do this independently — that's fine, the
+ * analysis itself is free and local — but only the first submission the
+ * server accepts triggers the actual LLM call and persistence (see
+ * socket.js's "submitDefiningMoves" handler); the result is then
+ * broadcast to both clients either way.
  */
 export default function MultiplayerBoard({ myColor }) {
   const gameRef = useRef(createGame({ white: "Player 1", black: "Player 2" }));
+  const engineRef = useRef(null);
+  const unmountedRef = useRef(false);
   const [fen, setFen] = useState(toFen(gameRef.current));
   const [status, setStatus] = useState(null);
   const [councilMessages, setCouncilMessages] = useState([]);
   const [recap, setRecap] = useState(null);
+  const [definingMoves, setDefiningMoves] = useState([]);
+  const [councilReport, setCouncilReport] = useState(null);
+  const [councilAnalyzing, setCouncilAnalyzing] = useState(false);
+
+  useEffect(() => {
+    // Reset (not reinitialize) — React StrictMode's dev-mode double-
+    // invoke runs this effect, its cleanup, then this effect again on
+    // the same ref object; without resetting here the first cleanup's
+    // `true` would permanently poison the guards below (see Board.jsx
+    // for where this exact bug was first found and fixed).
+    unmountedRef.current = false;
+    const engine = new Engine();
+    engineRef.current = engine;
+    return () => {
+      unmountedRef.current = true;
+      engine.destroy();
+    };
+  }, []);
 
   useEffect(() => {
     function handleOpponentMove(move) {
@@ -35,8 +68,18 @@ export default function MultiplayerBoard({ myColor }) {
       gameRef.current.load(serverFen);
       setFen(serverFen);
     }
-    function handleGameOver({ reason }) {
+    async function handleGameOver({ reason, pgn }) {
       setStatus(reason);
+      if (!engineRef.current) return;
+      setCouncilAnalyzing(true);
+      try {
+        const { definingMoves: flagged } = await analyzeGame(pgn, engineRef.current, { depth: 12 });
+        if (unmountedRef.current) return;
+        setDefiningMoves(flagged);
+        socket.emit("submitDefiningMoves", flagged);
+      } finally {
+        if (!unmountedRef.current) setCouncilAnalyzing(false);
+      }
     }
     function handleOpponentDisconnected() {
       setStatus((current) => current ?? "Your opponent disconnected.");
@@ -47,6 +90,13 @@ export default function MultiplayerBoard({ myColor }) {
     function handleCouncilRecap({ message }) {
       setRecap(message);
     }
+    // Broadcast to both clients regardless of which one's submission the
+    // server actually accepted, so the "losing" submitter's UI still
+    // gets the canonical result instead of hanging on its own local copy.
+    function handleCouncilReport({ definingMoves: flagged, report }) {
+      setDefiningMoves(flagged);
+      setCouncilReport(report);
+    }
 
     socket.on("move", handleOpponentMove);
     socket.on("boardState", handleBoardState);
@@ -54,6 +104,7 @@ export default function MultiplayerBoard({ myColor }) {
     socket.on("opponentDisconnected", handleOpponentDisconnected);
     socket.on("councilPing", handleCouncilPing);
     socket.on("councilRecap", handleCouncilRecap);
+    socket.on("councilReport", handleCouncilReport);
     return () => {
       socket.off("move", handleOpponentMove);
       socket.off("boardState", handleBoardState);
@@ -61,6 +112,7 @@ export default function MultiplayerBoard({ myColor }) {
       socket.off("opponentDisconnected", handleOpponentDisconnected);
       socket.off("councilPing", handleCouncilPing);
       socket.off("councilRecap", handleCouncilRecap);
+      socket.off("councilReport", handleCouncilReport);
     };
   }, []);
 
@@ -100,6 +152,9 @@ export default function MultiplayerBoard({ myColor }) {
       )}
       {status && <p className="game-status">{status}</p>}
       <CouncilPanel messages={councilMessages} recap={recap} />
+      {status && (
+        <CouncilReport definingMoves={definingMoves} report={councilReport} loading={councilAnalyzing} />
+      )}
     </div>
   );
 }

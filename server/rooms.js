@@ -37,6 +37,10 @@ export function createRoom(creatorSocketId, identity) {
     game: createGame({ white: identity.email }),
     ended: false,
     createdAt: Date.now(),
+    // Set once a client submits post-game defining-move analysis (see
+    // socket.js's "submitDefiningMoves" handler) — guards the one-per-
+    // game LLM call + persistence against both clients submitting.
+    reportRequested: false,
   };
   rooms.set(code, room);
   return room;
