@@ -1,0 +1,123 @@
+/* ── Fonts ────────────────────────────────────────────────────────────────
+   The original prototype embedded actual font files for two proprietary
+   faces it couldn't legally redistribute (Imperator Small Caps, Google
+   Sans), substituted with license-compatible Google Fonts lookalikes.
+   Load the same substitutes from Google Fonts directly instead of
+   carrying font binaries in this repo: */
+@import url("https://fonts.googleapis.com/css2?family=Cinzel:wght@400..900&family=Manrope:wght@200..800&family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap");
+
+:root {
+  /* ── Base palette ─────────────────────────────────────────────────────── */
+
+  /* Cinematic background gradient — cool blue-grey blending to warm bronze */
+  --bg-gradient-start: #2b3038;   /* cool slate */
+  --bg-gradient-mid:   #3d434c;   /* soft studio grey */
+  --bg-gradient-end:   #4a3d33;   /* warm bronze/amber shadow */
+  --bg-base: #2e3138;
+
+  /* Glass surface (frosted panels, accent — not the whole UI) */
+  --glass-fill: rgba(255, 255, 255, 0.08);
+  --glass-fill-strong: rgba(255, 255, 255, 0.14);
+  --glass-border: rgba(255, 255, 255, 0.16);
+  --glass-blur: 20px;
+
+  /* Solid surfaces (bottom nav, opaque cards, inputs) */
+  --surface-1: #23262c;
+  --surface-2: #2c2f36;
+  --surface-3: #363a42;
+
+  /* The single accent — legal-move / selection blue */
+  --accent-blue: #4fa8ff;
+  --accent-blue-dim: rgba(79, 168, 255, 0.35);
+  --accent-blue-soft: rgba(79, 168, 255, 0.14);
+
+  /* Move-quality feedback — reserved for post-game analysis only */
+  --quality-excellent: #3fae72;
+  --quality-inaccuracy: #d9b544;
+  --quality-mistake: #d98a44;
+  --quality-blunder: #d9544f;
+
+  /* Text */
+  --text-primary: #f6f5f2;
+  --text-secondary: #b8bcc4;
+  --text-muted: #7d828c;
+  --text-on-accent: #0d1117;
+
+  /* Bronze/amber warm accent for hero highlights (piece specular, dividers) */
+  --warm-bronze: #c9a06b;
+  --warm-bronze-dim: rgba(201, 160, 107, 0.25);
+
+  /* Chrome/glass piece material stops (for CSS gradient piece rendering) */
+  --piece-white-1: #fdfdfb;
+  --piece-white-2: #d7dbe0;
+  --piece-white-3: #9aa1ab;
+  --piece-black-1: #4a4d54;
+  --piece-black-2: #24262b;
+  --piece-black-3: #0e0f12;
+}
+
+/* Semantic aliases */
+:root {
+  --surface-glass: var(--glass-fill);
+  --surface-card: var(--surface-2);
+  --border-hairline: var(--glass-border);
+  --color-accent: var(--accent-blue);
+  --color-danger: var(--quality-blunder);
+  --color-success: var(--quality-excellent);
+}
+
+:root {
+  --font-display: "Cinzel", "Times New Roman", serif;
+  --font-sans: "Manrope", -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "SF Mono", "Roboto Mono", ui-monospace, monospace;
+
+  /* Type scale */
+  --text-hero: 700 clamp(3rem, 12vw, 4.5rem)/1.02 var(--font-display);
+  --text-display-lg: 500 2.25rem/1.1 var(--font-display);
+  --text-display-sm: 500 1.5rem/1.2 var(--font-display);
+
+  --text-title: 600 1.25rem/1.3 var(--font-sans);
+  --text-body-lg: 500 1.05rem/1.5 var(--font-sans);
+  --text-body: 500 0.95rem/1.5 var(--font-sans);
+  --text-caption: 600 0.8rem/1.4 var(--font-sans);
+  --text-label: 700 0.7rem/1.2 var(--font-sans);
+  --text-mono: 500 0.9rem/1.4 var(--font-mono);
+
+  --tracking-label: 0.08em;
+  --tracking-hero: 0.03em;
+}
+
+:root {
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 20px;
+  --radius-xl: 24px;
+  --radius-pill: 999px;
+
+  --touch-target-min: 48px;
+}
+
+:root {
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.24);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.32);
+  --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.4);
+  --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  --shadow-piece: 0 14px 20px rgba(0, 0, 0, 0.35);
+
+  --ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --duration-fast: 120ms;
+  --duration-base: 220ms;
+  --duration-slow: 420ms;
+}

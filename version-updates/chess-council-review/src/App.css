@@ -1,0 +1,363 @@
+:root {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #1a1a1a;
+  color-scheme: light;
+}
+
+body {
+  margin: 0;
+  background: #fafaf8;
+}
+
+.review-app {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 32px 16px 64px;
+}
+
+h1 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #333;
+}
+
+.review-intro {
+  font-size: 0.85rem;
+  color: #666;
+  line-height: 1.5;
+  margin-bottom: 20px;
+}
+
+.review-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.review-form textarea {
+  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+  font-size: 0.8rem;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  resize: vertical;
+}
+
+.review-form button {
+  align-self: flex-start;
+  padding: 10px 24px;
+  border-radius: 24px;
+  border: none;
+  background: #2d6a4f;
+  color: white;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.review-form button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.review-error {
+  color: #c94f4f;
+  font-size: 0.85rem;
+  margin-top: 10px;
+}
+
+.perspective-picker {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 0.85rem;
+  color: #444;
+}
+
+.perspective-picker-label {
+  color: #666;
+}
+
+.perspective-picker label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+/* Council report styles — same palette as chess-mvp core's App.css,
+   duplicated here on purpose: this module builds and deploys on its own,
+   so it can't reach into core for a shared stylesheet. */
+
+.council-report {
+  margin-top: 24px;
+  text-align: left;
+}
+
+.council-report h3 {
+  font-size: 0.85rem;
+  color: #666;
+  margin-bottom: 6px;
+}
+
+.council-report-loading {
+  font-size: 0.85rem;
+  color: #999;
+  font-style: italic;
+}
+
+.defining-moves {
+  list-style: none;
+  margin: 0 0 16px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.defining-move {
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: #f0f0ee;
+  border-left: 3px solid #ccc;
+}
+
+.defining-move-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.defining-move-tag {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: #ddd;
+  color: #555;
+}
+
+.defining-move-san {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.defining-move-caption {
+  font-size: 0.8rem;
+  color: #555;
+  margin: 4px 0 0;
+  line-height: 1.4;
+}
+
+.defining-move-blunder {
+  background: #fbeeee;
+  border-left-color: #c94f4f;
+}
+.defining-move-blunder .defining-move-tag {
+  background: #c94f4f;
+  color: white;
+}
+
+.defining-move-mistake {
+  background: #fbf3ea;
+  border-left-color: #c98a4f;
+}
+.defining-move-mistake .defining-move-tag {
+  background: #c98a4f;
+  color: white;
+}
+
+.defining-move-inaccuracy {
+  background: #fbf8ea;
+  border-left-color: #c9b64f;
+}
+.defining-move-inaccuracy .defining-move-tag {
+  background: #c9b64f;
+  color: white;
+}
+
+.defining-move-excellent {
+  background: #eef5ef;
+  border-left-color: #2d6a4f;
+}
+.defining-move-excellent .defining-move-tag {
+  background: #2d6a4f;
+  color: white;
+}
+
+.council-personas {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.council-persona {
+  background: #f3ede0;
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.council-persona h4 {
+  margin: 0 0 4px;
+  font-size: 0.8rem;
+  color: #333;
+}
+
+.council-persona p {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: #333;
+}
+
+.council-persona-wisdom {
+  background: #e9edf5;
+}
+
+.council-persona-wisdom h4 .defining-move-pattern {
+  color: #5a6a8a;
+}
+
+.defining-move-pattern {
+  display: inline-block;
+  font-size: 0.62rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #888;
+  margin-left: 6px;
+}
+
+/* Council Score — the report's first block, dark card by design so it
+   reads as a distinct "instrument panel" before the prose sections
+   start. Palette loosely follows the reference puzzle-stats screenshot:
+   near-black card, warm radar fill, colored stat pills. */
+
+.council-score-card {
+  background: #17181c;
+  border-radius: 16px;
+  padding: 20px 18px 18px;
+  margin-bottom: 24px;
+  color: #eee;
+}
+
+.council-score-title {
+  margin: 0 0 12px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-align: center;
+  color: #fff;
+}
+
+.council-score-chart-wrap {
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+
+.council-score-svg {
+  width: 100%;
+  max-width: 280px;
+  height: auto;
+  overflow: visible;
+}
+
+.council-score-ring {
+  fill: none;
+  stroke: #3a3c42;
+  stroke-width: 1;
+}
+
+.council-score-axis-line {
+  stroke: #3a3c42;
+  stroke-width: 1;
+}
+
+.council-score-data {
+  fill: #d9633b;
+  fill-opacity: 0.45;
+  stroke: #e2794f;
+  stroke-width: 2;
+}
+
+.council-score-label {
+  fill: #aaa;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.council-score-overall {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+}
+
+.council-score-overall-number {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.council-score-overall-caption {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #999;
+}
+
+.council-score-pills {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.council-score-pill {
+  border-radius: 10px;
+  padding: 10px 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  text-align: center;
+}
+
+.council-score-pill-value {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.council-score-pill-label {
+  font-size: 0.6rem;
+  color: rgba(255, 255, 255, 0.75);
+  line-height: 1.2;
+}
+
+.council-score-pill-neutral {
+  background: #2a2c33;
+}
+
+.council-score-pill-gold {
+  background: #7a5a2e;
+}
+
+.council-score-pill-green {
+  background: #2f6b4f;
+}
+
+.council-score-pill-red {
+  background: #7a3535;
+}
+
+.council-score-pill-blue {
+  background: #2e4f7a;
+}

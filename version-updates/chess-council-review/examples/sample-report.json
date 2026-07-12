@@ -1,0 +1,79 @@
+{
+  "_readme": "Approved reference for the Council Report's target structure and voice — see ../README.md's 'Example report' section. The `definingMoves` and `score*` fields are real output from src/lib/councilScore.js, reproducible via generate-sample.mjs. The `report` field's prose (everything server/council.js's getCouncilReport would normally generate) was hand-written to the exact target schema/voice as a worked example rather than pulled from a live API call — treat it as the bar to compare real output against, not something to regenerate mechanically.",
+  "pgn": "sample-game.pgn",
+  "result": "1-0",
+  "perspective": "w",
+
+  "definingMoves": [
+    { "ply": 39, "moveNumber": 20, "color": "w", "san": "Rxf6", "isCapture": true, "isCastle": false, "isCheckmate": false, "isCheck": false, "swing": -620, "classification": "blunder" },
+    { "ply": 40, "moveNumber": 20, "color": "b", "san": "Qxh5", "isCapture": true, "isCastle": false, "isCheckmate": false, "isCheck": false, "swing": 600, "classification": "excellent" },
+    { "ply": 45, "moveNumber": 23, "color": "w", "san": "g4", "isCapture": false, "isCastle": false, "isCheckmate": false, "isCheck": false, "swing": -520, "classification": "blunder" },
+    { "ply": 46, "moveNumber": 23, "color": "b", "san": "Qxd6", "isCapture": true, "isCastle": false, "isCheckmate": false, "isCheck": false, "swing": 520, "classification": "excellent" },
+    { "ply": 72, "moveNumber": 36, "color": "b", "san": "Rc3+", "isCapture": false, "isCastle": false, "isCheckmate": false, "isCheck": true, "swing": -510, "classification": "blunder" },
+    { "ply": 115, "moveNumber": 58, "color": "w", "san": "Nxb4", "isCapture": true, "isCastle": false, "isCheckmate": false, "isCheck": false, "swing": 0, "classification": "normal" }
+  ],
+
+  "scoreWhite": {
+    "scores": { "calculation": 78, "kingSafety": 60, "materialControl": 30, "endgameTechnique": 100, "resilience": 100 },
+    "overall": 74,
+    "stats": { "movesPlayed": 58, "blunders": 2, "mistakes": 0, "avgCentipawnLoss": 20, "castledOnMove": 7 }
+  },
+
+  "scoreBlack": {
+    "scores": { "calculation": 88, "kingSafety": 15, "materialControl": 100, "endgameTechnique": 100, "resilience": 20 },
+    "overall": 65,
+    "stats": { "movesPlayed": 57, "blunders": 1, "mistakes": 0, "avgCentipawnLoss": 12, "castledOnMove": null }
+  },
+
+  "report": {
+    "historian": "White's 2.Bc4 and 3.Bxb5 accept a real pawn sacrifice rather than a sound opening line — the point isn't book theory, it's that Black's structure comes out doubled on c6 for it. White castles on move 7, on schedule. Black never does. That single fact does more work in this game than any individual tactic: the two tempo-losing rook moves on 8...Rg8 and 9...Rh8 spend exactly the time a normal developing plan would have used to get the king to safety instead.",
+    "strategistSam": "The middlegame plan for White is straightforward once you see it: f4-f5 and Qg3-h3 aren't just space-grabbing, they're aimed directly at a king still on e8. Every piece Black develops arrives several moves later than it should, because the position never gave Black a free tempo to just castle.",
+    "endgameEd": "This does reach a real endgame — most minor pieces off by move 40, White up material and pushing kingside pawns. The technique from there is mostly about not getting distracted: White's king walk through g4-g5-h5 dodging checks is the riskier part, not the actual conversion, which is fairly clean rook-and-pawn play once the material edge is secured.",
+    "coachPriya": "Both players make the same mistake independently in this game — White missing that the rook on d6 was covered by the queen on e5 (move 23), Black missing that c3 was covered by the knight on e4 (move 36). That's the same habit showing up twice: before moving into or past a square, check what the opponent's most active piece already sees.",
+    "coachPriyaPattern": "recaptureSafety",
+    "definingMoveNotes": [
+      {
+        "moveNumber": 20,
+        "color": "w",
+        "san": "Rxf6",
+        "pattern": "hangingPiece",
+        "caption": "The rook grabs the pawn but leaves the queen on h5 with nothing defending it — the only thing that makes this playable at all is that Rxd6 is waiting one move later to win the piece back, which is a real gamble, not a clean calculation."
+      },
+      {
+        "moveNumber": 20,
+        "color": "b",
+        "san": "Qxh5",
+        "pattern": "other",
+        "caption": "Simply taking the free queen — there's no reason to look for anything fancier when a piece is sitting undefended on the board."
+      },
+      {
+        "moveNumber": 23,
+        "color": "w",
+        "san": "g4",
+        "pattern": "recaptureSafety",
+        "caption": "The queen on e5 has been eyeing this rook for a full move already — pushing a kingside pawn here means the rook simply isn't defended against a piece already aimed at it."
+      },
+      {
+        "moveNumber": 23,
+        "color": "b",
+        "san": "Qxd6",
+        "pattern": "other",
+        "caption": "The rook was hanging in plain sight; the only skill here is noticing it."
+      },
+      {
+        "moveNumber": 36,
+        "color": "b",
+        "san": "Rc3+",
+        "pattern": "hangingPiece",
+        "caption": "The check looks active, but c3 is a square the knight on e4 already covers — the rook walks into it delivering check, which doesn't change that the square is defended."
+      },
+      {
+        "moveNumber": 58,
+        "color": "w",
+        "san": "Nxb4",
+        "pattern": "other",
+        "caption": "The last capture of the game — by this point White's material and king activity had already decided the result; this just closes it out."
+      }
+    ]
+  }
+}
