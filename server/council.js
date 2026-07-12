@@ -140,6 +140,14 @@ export async function getCouncilReport({ pgn, result, definingMoves }) {
     const response = await client.messages.create({
       model: "claude-sonnet-5",
       max_tokens: 1200,
+      // Sonnet 5 defaults to adaptive thinking when `thinking` is omitted,
+      // and for this multi-persona JSON prompt it was spending the entire
+      // max_tokens budget on thinking before producing any output text at
+      // all (stop_reason: "max_tokens", empty content). This is pure
+      // narration over data the engine already computed — no reasoning
+      // needed — so thinking is disabled outright rather than just
+      // enlarging the budget.
+      thinking: { type: "disabled" },
       messages: [
         {
           role: "user",

@@ -58,6 +58,12 @@ export default function Board({ difficulty, onGameEnd, onRecap, onCouncilReport 
   }, []);
 
   useEffect(() => {
+    // Reset (not just initialize) — React StrictMode's dev-mode double-
+    // invoke runs this effect, its cleanup, then this effect again on the
+    // same ref object. Without resetting here, the first cleanup's `true`
+    // would permanently poison every later guard in this component,
+    // silently swallowing the Council Report result (see runCouncilAnalysis).
+    unmountedRef.current = false;
     const engine = new Engine();
     engine.setDifficulty(difficulty);
     engineRef.current = engine;

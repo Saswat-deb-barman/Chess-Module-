@@ -1,53 +1,105 @@
 # Chess MVP — Phase 1 Handoff
 
-## Immediate resume point — Milestone 8 (deployment), blocked on GitHub setup
-Milestones 1–7 (the whole real-time 1v1 multiplayer feature) are done
-and verified — see the section below for the full build summary. This
-project is now a git repo with one local commit (`git log` will show
-"Initial commit: Chess MVP with council commentary and 1v1 multiplayer")
-containing everything through Milestone 7. **Nothing has been pushed to
-GitHub yet.**
+## Immediate resume point — Milestone 8 (deployment) DONE and verified live
+GitHub, Vercel, Render, Neon, and Google OAuth are all wired together and
+confirmed working end to end:
+- **GitHub**: pushed to a **personal** account repo,
+  [Saswat-deb-barman/Chess-Module-](https://github.com/Saswat-deb-barman/Chess-Module-)
+  (not the `saswat-alchemist` org — that org rejected PATs with a clean
+  403; personal account was the deliberate fix, see below for the
+  troubleshooting trail if this resurfaces on a future project).
+- **Frontend (Vercel)**: live at
+  [chess-module.vercel.app](https://chess-module.vercel.app), project
+  under the `saswatalchemist` Vercel account, auto-deploys on push to
+  `main`. Env vars set: `VITE_GOOGLE_CLIENT_ID`, `VITE_COUNCIL_URL`,
+  `VITE_SOCKET_URL` (the latter two both point at the Render backend
+  below).
+- **Backend (Render)**: live at
+  `https://chess-mvp-server.onrender.com`, root directory `server`,
+  start command `node index.js` (no `npm start` script exists — must be
+  set explicitly), free tier. Env vars set: `ANTHROPIC_API_KEY`,
+  `DATABASE_URL`, `GOOGLE_CLIENT_ID`. Auto-deploys on push to `main`.
+- **CORS**: `server/index.js` now reads an `allowedOrigins` allowlist
+  (env var `CLIENT_ORIGIN`, comma-separated, defaults to
+  `http://localhost:5173,https://chess-module.vercel.app`) instead of
+  the old wide-open `origin: "*"` on both Express's `cors()` and the
+  Socket.io server — verified live with a `curl -X OPTIONS` origin
+  check against the deployed backend.
+- **Google OAuth**: `https://chess-module.vercel.app` added to
+  Authorized JavaScript origins in Google Cloud Console (by the project
+  owner — this is account-settings access I don't have). Confirmed
+  working with an actual live sign-in on the deployed site, no more
+  `origin_mismatch`.
 
-**What happened and why it's not pushed**: first tried pushing to
-`saswat-alchemist/Chess-module` on GitHub, which turned out to be an
-**organization**, not a personal account — got a clean `403 Permission
-to saswat-alchemist/Chess-module.git denied to saswat-alchemist` even
-with a correctly-scoped classic PAT, which is the signature of an org
-that restricts personal-access-token access (needs either SSO
-authorization on the token or an org owner to allow PATs under
-Organization Settings → Third-party Access). Decision made: skip the org
-entirely and set this up under a **personal** GitHub account instead, so
-there's no permission layer to fight — full end-to-end ownership.
+**What's left**: the two-human click-through (sign in as two different
+Google accounts in two real tabs, play a full friend game including a
+capture/check, reach checkmate/resign, confirm both dashboards show the
+right opponent) still hasn't been done — see "Immediate next step"
+further down. Render's free-tier idle-sleep risk for mid-game friend
+disconnects (noted under "Deployment" below) also hasn't been stress
+-tested in practice yet, just decided to accept for now.
 
-**Two PATs were pasted directly into chat during this troubleshooting
-and are dead**: one got revoked proactively (correct call), the second
-(a classic token, `repo` scope) is still live as far as I know — **revoke
-it too** at [github.com/settings/tokens](https://github.com/settings/tokens)
-before continuing, same reasoning as always: anything pasted in a chat
+**Housekeeping note**: there's a "Chess Council module" (5-persona
+post-game report, see section below) committed locally
+(`f725a23`) but not yet pushed to GitHub/Render — check with whoever's
+working on it before pushing, since it hasn't been verified in this
+session.
+
+**GitHub org 403 troubleshooting trail (for reference, already resolved)**:
+first tried pushing to `saswat-alchemist/Chess-module` on GitHub, which
+turned out to be an **organization**, not a personal account — got a
+clean `403 Permission to saswat-alchemist/Chess-module.git denied to
+saswat-alchemist` even with a correctly-scoped classic PAT, the
+signature of an org that restricts personal-access-token access (needs
+either SSO authorization on the token or an org owner to allow PATs
+under Organization Settings → Third-party Access). Fixed by moving to a
+personal account instead. Two PATs were pasted directly into chat during
+this troubleshooting and are dead — one was revoked proactively, the
+other should be checked/revoked at
+[github.com/settings/tokens](https://github.com/settings/tokens) if that
+hasn't happened yet, same reasoning as always: anything pasted in a chat
 transcript should be treated as burned regardless of whether it still
-technically works.
-
-**To actually resume this**:
-1. Create a new repo under your **personal** GitHub account (not
-   `saswat-alchemist`) at [github.com/new](https://github.com/new) —
-   empty, no README/gitignore (local commits already exist).
-2. Tell me the repo URL — I'll run `git remote add origin <url>` (the
-   old `saswat-alchemist` remote was already removed, clean slate).
-3. Generate a fresh classic PAT (**never paste it in chat** — go
-   straight to your terminal with it) at
-   [github.com/settings/tokens/new](https://github.com/settings/tokens/new),
-   `repo` scope checkbox only.
-4. Run `git push -u origin main` yourself in your terminal (not through
-   me — same reasoning as the token handling): username is your GitHub
-   username, password is the token (paste it — the terminal shows
-   nothing at all while typing/pasting into a password prompt, that's
-   normal, not a bug).
-5. Once pushed, next is connecting Vercel (frontend) + Render (backend)
-   — you said you still need to create accounts for both; I can't create
-   accounts on your behalf (same rule as everything else external this
-   project has needed: Neon, Google Cloud, GitHub).
+technically works. A later push also briefly authenticated as the wrong
+GitHub account (`saswat-alchemist` instead of `saswat-deb-barman`)
+because the browser was still logged into the org account when the PAT
+was generated — fixed by generating the PAT while logged into the
+correct personal account.
 
 ## Chess Council module — 5-persona post-game analysis (new, solo-vs-bot only)
+**Verified working end-to-end as of this session** — three real bugs were
+found and fixed during verification (all confirmed live, not just by
+reading code):
+1. **Eval sign was inverted** ([src/lib/gameAnalysis.js](src/lib/gameAnalysis.js)) —
+   UCI's `score cp` is from the perspective of whoever is *to move* in the
+   position just sent, which alternates every ply. The code took it as-is
+   and labeled it "White's perspective" without ever flipping sign. Proved
+   with a real game: a deliberate knight sac (an actual blunder) computed a
+   *positive* swing and got classified "normal" instead of a large negative
+   swing crossing into "blunder." Fixed by flipping sign whenever White was
+   the mover (since the position sent is then Black-to-move, so the raw
+   score is Black's perspective).
+2. **Council Report hung forever in local dev** ([src/components/Board.jsx](src/components/Board.jsx)) —
+   `unmountedRef` gets set `true` by React 18 StrictMode's dev-mode
+   double-invoke of the engine-setup effect's cleanup, and was never reset
+   back to `false` on the following real mount. Confirmed by instrumenting
+   the actual Worker: the analysis silently completed correctly in the
+   background, but `runCouncilAnalysis`'s `if (unmountedRef.current) return`
+   guards swallowed the result before `/council/report` ever fired, and the
+   loading state never cleared. Since this project's own dev instructions
+   use `npm run dev` (StrictMode on), this made the feature look permanently
+   broken in exactly the environment used to test it. Fixed by resetting
+   `unmountedRef.current = false` at the top of the mount effect.
+3. **`getCouncilReport` always returned null** ([server/council.js](server/council.js)) —
+   Claude Sonnet 5 defaults to adaptive thinking when the `thinking` param
+   is omitted (a Sonnet-5-specific behavior change from 4.6), and for this
+   multi-persona JSON prompt it spent the *entire* `max_tokens: 1200`
+   budget thinking before producing any output text
+   (`stop_reason: "max_tokens"`, empty content). `getPing`/`getRecap`
+   happen to survive this because their simpler prompts don't trigger much
+   adaptive thinking. Fixed by setting `thinking: { type: "disabled" }` —
+   this is pure narration over data the engine already computed, no
+   reasoning needed.
+
 Built on top of the existing lightweight "council" (live pings + one-line
 recap, both still unchanged) to add the deeper post-game breakdown Saswat
 already does by hand outside this app: five named coaching personas (The
@@ -202,23 +254,15 @@ currently forfeits your seat, same posture as the reference demo this
 was built from. Revisit only if that turns out to be a frequent real
 complaint, not preemptively.
 
-**Immediate next step**: an actual two-human click-through — sign in as
-two different Google accounts in two real browser tabs, play a full
-friend game including a capture/check (for a live council ping), let it
-reach checkmate or resign, and confirm both players' dashboards show the
-game with the correct opponent and can each ask their own follow-up
-question. This needs a real second Google account, which is why it
-wasn't done this session (the automated test browser has no signed-in
-identity to use).
-
-**After that's confirmed**, next up is actual deployment — Vercel
-(frontend) + Render (backend) + Neon (already set up); see "Deployment
-(next up)" below. One new consideration versus the original plan: Render
-free tier's idle-sleep risk now extends beyond "waiting for a friend to
-join" to potentially dropping an in-progress game with two slow-thinking
-players, since WebSocket keep-alive traffic may not reliably reset
-Render's idle timer. Decided to start on the free tier anyway and
-upgrade only if that's a real problem in practice.
+**Immediate next step (still open — deployment is done, this isn't)**:
+an actual two-human click-through, now on the **deployed** site
+(chess-module.vercel.app) rather than local — sign in as two different
+Google accounts in two real browser tabs, play a full friend game
+including a capture/check (for a live council ping), let it reach
+checkmate or resign, and confirm both players' dashboards show the game
+with the correct opponent and can each ask their own follow-up question.
+This needs a real second Google account, which is why it hasn't been
+done yet (automated test browsers have no signed-in identity to use).
 
 ## What this is
 A bot-only, single-player chess app. No accounts, no database, no
@@ -400,29 +444,31 @@ bearer token (`requireAuth` middleware) and are scoped to the caller's
 own `google_sub`; the council endpoints stay unauthenticated on purpose —
 commentary isn't gated behind sign-in.
 
-## Deployment (next up)
-Not yet done. Planned stack, chosen for cost (~$0/month baseline) and
-low operational complexity: Vercel for the static frontend, Render for
-the `server/` Express + Socket.io backend, Neon for Postgres (same
-database local dev already points at, so there's no dev/prod schema
-drift to discover at deploy time).
+## Deployment — DONE
+Stack, chosen for cost (~$0/month baseline) and low operational
+complexity: Vercel for the static frontend, Render for the `server/`
+Express + Socket.io backend, Neon for Postgres (same database local dev
+already pointed at, so there was no dev/prod schema drift to discover at
+deploy time). Live URLs and env var details are in the "Immediate resume
+point" section at the top of this file.
 
-Now that Socket.io carries live gameplay, the free-tier idle-sleep
-trade-off is a bit bigger than originally scoped: it's no longer just
-"cold-start delay on a council/save call" — Render's idle-sleep timer
-may not reliably reset from WebSocket keep-alive traffic, so a friend
-game with two slow-thinking players carries some risk of a mid-game
-disconnect, not just the "waiting for a friend to join" window. Decision
-made: start on the free tier anyway, upgrade to Render's Starter tier
-(~$7/mo, no sleep) only if that turns out to be a real problem once
-people are actually using it.
-
-When deploying: lock down both CORS surfaces together, since they're
-genuinely separate config — Express's bare `cors()` in `server/index.js`
-AND the Socket.io server's own `{ cors: { origin: "*" } }` both currently
-allow all origins and both need pointing at the real deployed frontend
-origin. Add a `VITE_SOCKET_URL` env var alongside the existing
+Both CORS surfaces were locked down together, since they're genuinely
+separate config — Express's `cors()` and the Socket.io server's own
+`cors` option in `server/index.js` both now share one `allowedOrigins`
+allowlist (env var `CLIENT_ORIGIN`, comma-separated) instead of the old
+`origin: "*"`. `VITE_SOCKET_URL` was added as a Vercel env var alongside
 `VITE_COUNCIL_URL` (client falls back to `VITE_COUNCIL_URL` if
-`VITE_SOCKET_URL` isn't set, so this is optional if they're the same
-host). Add the deployed frontend URL to the Google OAuth Client's
-authorized JavaScript origins alongside localhost.
+`VITE_SOCKET_URL` isn't set — currently both point at the same Render
+host, so the fallback isn't exercised but is there if they ever diverge).
+The deployed frontend URL was added to the Google OAuth Client's
+authorized JavaScript origins alongside localhost — confirmed with a
+live sign-in on the deployed site.
+
+**Not yet stress-tested**: the free-tier idle-sleep risk flagged when
+this was still "next up" — Socket.io keep-alive traffic may not reliably
+reset Render's idle timer, so a friend game with two slow-thinking
+players carries some risk of a mid-game disconnect on the free tier.
+Decision was to start on free tier anyway and only upgrade to Render's
+Starter tier (~$7/mo, no sleep) if that turns out to be a real problem
+in practice — still true, just now something to actually watch for
+instead of a theoretical risk.

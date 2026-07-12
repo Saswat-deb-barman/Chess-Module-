@@ -62,7 +62,12 @@ export async function analyzeGame(pgn, engine, { depth = 12, maxDefiningMoves = 
 
     // eslint-disable-next-line no-await-in-loop -- sequential by design, one engine instance
     const { evalCp, mate } = await engine.analyzePosition(replay.fen(), { depth });
-    const evalAfterWhitePerspective = evalCp;
+    // UCI's score is always from the perspective of whoever is to move in
+    // the FEN just sent — which alternates every ply regardless of who
+    // made the move. After a White move it's Black to move (raw score is
+    // Black's perspective, needs negating); after a Black move it's
+    // White to move (raw score is already White's perspective).
+    const evalAfterWhitePerspective = applied.color === "w" ? -evalCp : evalCp;
 
     const moverSign = applied.color === "w" ? 1 : -1;
     const beforeForMover = moverSign * evalBeforeWhitePerspective;
