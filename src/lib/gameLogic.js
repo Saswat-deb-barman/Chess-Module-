@@ -77,3 +77,24 @@ export function toFen(game) {
 export function toPgn(game) {
   return game.pgn();
 }
+
+/**
+ * Single source of truth for "is it this player's turn to move right now,"
+ * shared by the turn indicator and the click-to-move gating — so the two
+ * don't silently drift on what "my turn" means (CM-202/CM-203).
+ */
+export function isMyTurn(game, myColor, status) {
+  return !status && game.turn() === myColor;
+}
+
+/**
+ * Legal moves from a given square in the current position, verbose (so
+ * captures/castling/en-passant are distinguishable by the caller).
+ * chess.js already restricts these to moves that don't leave the king in
+ * check — pins, check-resolution, castling rights and en passant are all
+ * handled by chess.js itself, not reimplemented here.
+ */
+export function getLegalMoves(game, square) {
+  if (!square) return [];
+  return game.moves({ square, verbose: true });
+}

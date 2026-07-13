@@ -1,10 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { Chessboard } from "react-chessboard";
-import { createGame, tryMove, toFen } from "../lib/gameLogic.js";
+import { createGame, tryMove, toFen, isMyTurn } from "../lib/gameLogic.js";
 import { socket } from "../lib/multiplayerSocket.js";
 import { Engine } from "../engine/stockfishWorker.js";
 import { analyzeGame } from "../lib/gameAnalysis.js";
 import { useBoardWidth } from "../hooks/useBoardWidth.js";
+import { useLegalTargets } from "../hooks/useLegalTargets.js";
+import { useDocumentTitle } from "../hooks/useDocumentTitle.js";
+import { buildMoveHighlightStyles } from "./MoveHighlightLayer.jsx";
+import TurnIndicator from "./TurnIndicator.jsx";
 import CouncilPanel from "./CouncilPanel.jsx";
 import CouncilReport from "./CouncilReport.jsx";
 
@@ -41,11 +45,15 @@ export default function MultiplayerBoard({ myColor }) {
   const [status, setStatus] = useState(null);
   const [boardContainerRef, boardWidth] = useBoardWidth();
   const [flipped, setFlipped] = useState(false); // CM-201 test scaffolding: no flip control existed before
+  const [selectedSquare, setSelectedSquare] = useState(null);
+  const legalTargets = useLegalTargets(gameRef.current, selectedSquare, fen);
   const [councilMessages, setCouncilMessages] = useState([]);
   const [recap, setRecap] = useState(null);
   const [definingMoves, setDefiningMoves] = useState([]);
   const [councilReport, setCouncilReport] = useState(null);
   const [councilAnalyzing, setCouncilAnalyzing] = useState(false);
+
+  useDocumentTitle(isMyTurn(gameRef.current, myColor, status));
 
   useEffect(() => {
     // Reset (not reinitialize) — React StrictMode's dev-mode double-
@@ -119,16 +127,53 @@ export default function MultiplayerBoard({ myColor }) {
     };
   }, []);
 
-  function onPieceDrop(sourceSquare, targetSquare) {
-    const game = gameRef.current;
-    if (status || game.turn() !== myColor) return false;
+  // Selection can survive past a game-ending event that doesn't route
+  // through applyMove (opponent disconnect, server-declared game over) —
+  // clear it so a stale highlight can't linger once the game is over.
+  useEffect(() => {
+    if (status) setSelectedSquare(null);
+  }, [status]);
 
+  // Single move-application choke point — both onPieceDrop (drag) and
+  // onSquareClick (click) call this, so the two paths can never diverge
+  // (CM-203: "click-move and drag-move produce identical move objects").
+  function applyMove(sourceSquare, targetSquare) {
+    const game = gameRef.current;
     const move = tryMove(game, sourceSquare, targetSquare);
-    if (!move) return false; // triggers react-chessboard's snapback
+    if (!move) return null;
 
     setFen(toFen(game));
     socket.emit("move", { from: sourceSquare, to: targetSquare, promotion: "q" });
+    return move;
+  }
+
+  function onPieceDrop(sourceSquare, targetSquare) {
+    if (status || gameRef.current.turn() !== myColor) return false;
+    const move = applyMove(sourceSquare, targetSquare);
+    if (!move) return false; // triggers react-chessboard's snapback
+    setSelectedSquare(null);
     return true;
+  }
+
+  function onSquareClick(square, piece) {
+    if (!isMyTurn(gameRef.current, myColor, status)) return;
+
+    if (selectedSquare === square) {
+      setSelectedSquare(null);
+      return;
+    }
+
+    if (selectedSquare) {
+      const isLegalTarget = legalTargets.some((move) => move.to === square);
+      if (isLegalTarget) {
+        applyMove(selectedSquare, square);
+        setSelectedSquare(null);
+        return;
+      }
+    }
+
+    const isOwnPiece = piece && piece[0] === myColor;
+    setSelectedSquare(isOwnPiece ? square : null);
   }
 
   // The server is authoritative for the actual result (same reasoning as
@@ -143,15 +188,25 @@ export default function MultiplayerBoard({ myColor }) {
     ? (baseOrientation === "white" ? "black" : "white")
     : baseOrientation;
 
+  const activeColor = gameRef.current.turn();
+
   return (
     <div className="board-screen">
-      <div className="board-wrap" ref={boardContainerRef}>
+      {!status && (
+        <TurnIndicator activeColor={activeColor} myColor={myColor} opponentLabel="opponent" />
+      )}
+      <div
+        className={`board-wrap ${activeColor === myColor && !status ? "board-wrap--active-turn" : ""}`}
+        ref={boardContainerRef}
+      >
         {boardWidth > 0 && (
           <Chessboard
             key={boardWidth}
             boardWidth={boardWidth}
             position={fen}
             onPieceDrop={onPieceDrop}
+            onSquareClick={onSquareClick}
+            customSquareStyles={buildMoveHighlightStyles(selectedSquare, legalTargets)}
             boardOrientation={boardOrientation}
             arePiecesDraggable={!status}
           />

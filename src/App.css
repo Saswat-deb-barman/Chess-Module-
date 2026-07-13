@@ -336,6 +336,32 @@ h1 {
   color: white;
 }
 
+.turn-indicator-pair {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  padding: 0 4px;
+  margin-bottom: 8px;
+}
+
+.turn-indicator {
+  padding: 3px 10px;
+  border-radius: 8px;
+  background: transparent;
+  color: #888;
+}
+
+.turn-indicator--active {
+  background: #eaf3ec;
+  color: #3a7d44;
+  font-weight: 600;
+}
+
+.board-wrap--active-turn {
+  box-shadow: 0 0 0 2px #3a7d44;
+  border-radius: 4px;
+}
+
 .board-wrap {
   margin: 0 auto;
   max-width: 420px;

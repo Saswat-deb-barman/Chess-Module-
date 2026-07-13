@@ -1,11 +1,15 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Chessboard } from "react-chessboard";
-import { createGame, tryMove, getGameOverReason, getResultTag, toFen, toPgn } from "../lib/gameLogic.js";
+import { createGame, tryMove, getGameOverReason, getResultTag, toFen, toPgn, isMyTurn } from "../lib/gameLogic.js";
 import { Engine, parseUciMove } from "../engine/stockfishWorker.js";
 import { pingCouncil, recapCouncil, reportCouncil } from "../lib/council.js";
 import { analyzeGame } from "../lib/gameAnalysis.js";
 import { useBoardWidth } from "../hooks/useBoardWidth.js";
+import { useLegalTargets } from "../hooks/useLegalTargets.js";
+import { useDocumentTitle } from "../hooks/useDocumentTitle.js";
+import { buildMoveHighlightStyles } from "./MoveHighlightLayer.jsx";
 import Clock, { INITIAL_TIMES } from "./Clock.jsx";
+import TurnIndicator from "./TurnIndicator.jsx";
 import MoveHistory from "./MoveHistory.jsx";
 import CouncilPanel from "./CouncilPanel.jsx";
 import CouncilReport from "./CouncilReport.jsx";
@@ -45,11 +49,15 @@ export default function Board({ difficulty, onGameEnd, onRecap, onCouncilReport 
   const [botThinking, setBotThinking] = useState(false);
   const [boardContainerRef, boardWidth] = useBoardWidth();
   const [flipped, setFlipped] = useState(false); // CM-201 test scaffolding: no flip control existed before
+  const [selectedSquare, setSelectedSquare] = useState(null);
+  const legalTargets = useLegalTargets(gameRef.current, selectedSquare, fen);
   const [councilMessages, setCouncilMessages] = useState([]);
   const [recap, setRecap] = useState(null);
   const [definingMoves, setDefiningMoves] = useState([]);
   const [councilReport, setCouncilReport] = useState(null);
   const [councilAnalyzing, setCouncilAnalyzing] = useState(false);
+
+  useDocumentTitle(isMyTurn(gameRef.current, HUMAN_COLOR, status));
 
   // Fire-and-forget: the council is commentary, never gameplay-blocking.
   const firePing = useCallback((game, move) => {
@@ -59,6 +67,13 @@ export default function Board({ difficulty, onGameEnd, onRecap, onCouncilReport 
       if (message) setCouncilMessages((prev) => [...prev, message]);
     });
   }, []);
+
+  // Selection can survive past a move that ends the game via a path other
+  // than applyMove (e.g. resign) — clear it so a stale highlight can't
+  // linger on a square once the game is over.
+  useEffect(() => {
+    if (status) setSelectedSquare(null);
+  }, [status]);
 
   useEffect(() => {
     // Reset (not just initialize) — React StrictMode's dev-mode double-
@@ -151,12 +166,13 @@ export default function Board({ difficulty, onGameEnd, onRecap, onCouncilReport 
     }
   }, [status, endGame, firePing]);
 
-  function onPieceDrop(sourceSquare, targetSquare) {
+  // Single move-application choke point — both onPieceDrop (drag) and
+  // onSquareClick (click) call this, so the two paths can never diverge
+  // (CM-203: "click-move and drag-move produce identical move objects").
+  function applyMove(sourceSquare, targetSquare) {
     const game = gameRef.current;
-    if (status || game.turn() !== HUMAN_COLOR || botThinking) return false;
-
     const move = tryMove(game, sourceSquare, targetSquare);
-    if (!move) return false; // triggers react-chessboard's snapback
+    if (!move) return null;
 
     setFen(toFen(game));
     setPgn(toPgn(game));
@@ -168,7 +184,36 @@ export default function Board({ difficulty, onGameEnd, onRecap, onCouncilReport 
     } else {
       requestBotMove();
     }
+    return move;
+  }
+
+  function onPieceDrop(sourceSquare, targetSquare) {
+    if (status || gameRef.current.turn() !== HUMAN_COLOR || botThinking) return false;
+    const move = applyMove(sourceSquare, targetSquare);
+    if (!move) return false; // triggers react-chessboard's snapback
+    setSelectedSquare(null);
     return true;
+  }
+
+  function onSquareClick(square, piece) {
+    if (!isMyTurn(gameRef.current, HUMAN_COLOR, status) || botThinking) return;
+
+    if (selectedSquare === square) {
+      setSelectedSquare(null);
+      return;
+    }
+
+    if (selectedSquare) {
+      const isLegalTarget = legalTargets.some((move) => move.to === square);
+      if (isLegalTarget) {
+        applyMove(selectedSquare, square);
+        setSelectedSquare(null);
+        return;
+      }
+    }
+
+    const isOwnPiece = piece && piece[0] === HUMAN_COLOR;
+    setSelectedSquare(isOwnPiece ? square : null);
   }
 
   function handleFlagFall(color) {
@@ -187,21 +232,36 @@ export default function Board({ difficulty, onGameEnd, onRecap, onCouncilReport 
     ? (baseOrientation === "white" ? "black" : "white")
     : baseOrientation;
 
+  const activeColor = gameRef.current.turn();
+
   return (
     <div className="board-screen">
       <Clock
-        activeColor={gameRef.current.turn()}
+        activeColor={activeColor}
         running={!status}
         onFlagFall={handleFlagFall}
         timesRef={timesRef}
       />
-      <div className="board-wrap" ref={boardContainerRef}>
+      {!status && (
+        <TurnIndicator
+          activeColor={activeColor}
+          myColor={HUMAN_COLOR}
+          opponentLabel={`Stockfish (${capitalize(difficulty)})`}
+          isOpponentThinking={botThinking}
+        />
+      )}
+      <div
+        className={`board-wrap ${activeColor === HUMAN_COLOR && !status ? "board-wrap--active-turn" : ""}`}
+        ref={boardContainerRef}
+      >
         {boardWidth > 0 && (
           <Chessboard
             key={boardWidth}
             boardWidth={boardWidth}
             position={fen}
             onPieceDrop={onPieceDrop}
+            onSquareClick={onSquareClick}
+            customSquareStyles={buildMoveHighlightStyles(selectedSquare, legalTargets)}
             boardOrientation={boardOrientation}
             arePiecesDraggable={!status}
           />
