@@ -1,4 +1,4 @@
-# Chess MVP — Handoff
+# Chess by Alchemist — Handoff
 
 A chess web app: play Stockfish solo, or play a friend in real time —
 both modes get live LLM commentary during the game and a 5-persona
@@ -14,6 +14,17 @@ room** → send your friend the page URL with `?room=CODE` appended (shown
 on the waiting screen) or just the code itself. They sign in, paste the
 code (or open your link, which pre-fills it), and click join.
 
+## Next build: Cycle 2
+
+Scoped in [`docs/CHESS_MVP_PRD_CYCLE_2.md`](docs/CHESS_MVP_PRD_CYCLE_2.md)
+(supersedes nothing, extends [`docs/CHESS_MVP_UX_SPEC.md`](docs/CHESS_MVP_UX_SPEC.md)
+v0.1). Theme: make the board feel like a real board — fix the drag
+offset, add a turn indicator and legal-move dots, a check alert, the
+move-list rail toggle, a 60-second disconnect grace (server-authoritative
+room state), login-required routing, and council-as-commentator (not
+advisor) boxes. Not started yet — a plan is being drafted before any
+code changes.
+
 ## Current status
 
 | Piece | Status |
@@ -24,6 +35,7 @@ code (or open your link, which pre-fills it), and click join.
 | 5-persona Council Report, solo mode | ✅ Built, 3 real bugs found and fixed this session, verified live end-to-end |
 | 5-persona Council Report, friend mode | ✅ Built and wired — dedup logic verified against real functions under a simulated race; **not yet verified live with two humans** |
 | Deployment (GitHub → Vercel + Render, Neon DB, CORS, Google OAuth) | ✅ Done, verified live |
+| Visual design system | 🎨 Direction proposed as a static mockup, **not yet wired into the real app** — see "Design system" below |
 
 **The one open item**: an actual two-human click-through on the deployed
 site — sign in as two different Google accounts in two real tabs, play a
@@ -32,6 +44,49 @@ resign, and confirm both players' dashboards show the game with the
 correct opponent, the Council Report renders for both, and each can ask
 their own follow-up question. This needs a real second Google account,
 which is why it hasn't been done from an automated browser.
+
+## Design system
+
+The app has never had a real visual identity — solo mode's original
+styling was intentionally minimal, and everything since (multiplayer,
+the Council) was styled ad hoc, reusing whatever classes already existed.
+A proper design system was scoped out in a static mockup before touching
+any real component:
+
+**[Artifact: design system + 4 screens](https://claude.ai/code/artifact/5dacba77-9fa9-4df1-93f4-5797ae44f3b1)**
+— landing page, sign-in, dashboard + in-game view, and the post-game
+Council Report, all in one page (top nav switches between them).
+
+Direction: **"The Adjournment"** — classical tournament chess (a game
+paused mid-thought, scoresheets, brass clocks), not a generic cozy-library
+look. Graphite ground, a patinated verdigris-green accent, brass reserved
+for the Council's voice, muted brick-red for blunders. Three typefaces
+doing three distinct jobs: Fraunces (serif, italic for the Council's
+"voice"), Public Sans (UI chrome), IBM Plex Mono (anything notational —
+clocks, PGN, room codes, defining-move tags) — all three embedded as
+real font files (fetched from Google Fonts and inlined as base64 data
+URIs, since the Artifact sandbox blocks live font CDN links). Both light
+and dark themes are fully built, not just declared — verified in-browser.
+The post-game screen's example content is a real, verifiable game (the
+Légal Trap) run through the actual `analyzeGame()` classification logic,
+not placeholder text.
+
+**Two real bugs were found and fixed while reviewing the mockup itself**,
+worth knowing if this pattern comes up again: (1) a character-encoding
+issue where em-dashes and accented characters rendered as mojibake
+(`Ã¢â‚¬"` style garbage) because the browser guessed the wrong charset —
+fixed by converting every non-ASCII character to an HTML entity rather
+than trusting encoding negotiation; (2) a blind find-and-replace for
+prose apostrophes almost corrupted every CSS/JS string literal in the
+file (`'Fraunces Voice'`, `querySelectorAll('.screen')`, etc.) — caught
+before publishing by checking the actual character being replaced wasn't
+also a code delimiter, not just a prose character.
+
+**Not yet done**: porting this into the real React components
+(`Board.jsx`, `MultiplayerBoard.jsx`, `GameHistory.jsx`, `App.css`, the
+hand-built board would map to `react-chessboard`'s `customSquareStyles`/
+`customPieces` props). Waiting on a decision: wire it in as-is, or
+adjust the direction first.
 
 ## Architecture
 

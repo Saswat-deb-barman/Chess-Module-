@@ -84,7 +84,7 @@ export default function App() {
   return (
     <main className="app">
       <SignInButton />
-      <h1>Chess MVP — Phase 1</h1>
+      <h1>Chess by Alchemist</h1>
 
       <div className="top-mode-toggle">
         <button
