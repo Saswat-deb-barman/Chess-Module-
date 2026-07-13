@@ -299,6 +299,22 @@ h1 {
   background: #fdf1f1;
 }
 
+.flip-button {
+  margin-top: 10px;
+  margin-left: 10px;
+  padding: 6px 18px;
+  border-radius: 18px;
+  border: 1px solid #999;
+  background: white;
+  color: #444;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.flip-button:hover {
+  background: #f2f2f2;
+}
+
 .clock-pair {
   display: flex;
   justify-content: space-between;

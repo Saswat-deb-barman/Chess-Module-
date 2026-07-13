@@ -4,6 +4,7 @@ import { createGame, tryMove, getGameOverReason, getResultTag, toFen, toPgn } fr
 import { Engine, parseUciMove } from "../engine/stockfishWorker.js";
 import { pingCouncil, recapCouncil, reportCouncil } from "../lib/council.js";
 import { analyzeGame } from "../lib/gameAnalysis.js";
+import { useBoardWidth } from "../hooks/useBoardWidth.js";
 import Clock, { INITIAL_TIMES } from "./Clock.jsx";
 import MoveHistory from "./MoveHistory.jsx";
 import CouncilPanel from "./CouncilPanel.jsx";
@@ -42,6 +43,8 @@ export default function Board({ difficulty, onGameEnd, onRecap, onCouncilReport 
   const [pgn, setPgn] = useState("");
   const [status, setStatus] = useState(null); // null while in progress, string when over
   const [botThinking, setBotThinking] = useState(false);
+  const [boardContainerRef, boardWidth] = useBoardWidth();
+  const [flipped, setFlipped] = useState(false); // CM-201 test scaffolding: no flip control existed before
   const [councilMessages, setCouncilMessages] = useState([]);
   const [recap, setRecap] = useState(null);
   const [definingMoves, setDefiningMoves] = useState([]);
@@ -179,6 +182,11 @@ export default function Board({ difficulty, onGameEnd, onRecap, onCouncilReport 
     endGame("Black wins by resignation", { resignedBy: HUMAN_COLOR });
   }
 
+  const baseOrientation = HUMAN_COLOR === "w" ? "white" : "black";
+  const boardOrientation = flipped
+    ? (baseOrientation === "white" ? "black" : "white")
+    : baseOrientation;
+
   return (
     <div className="board-screen">
       <Clock
@@ -187,13 +195,17 @@ export default function Board({ difficulty, onGameEnd, onRecap, onCouncilReport 
         onFlagFall={handleFlagFall}
         timesRef={timesRef}
       />
-      <div className="board-wrap">
-        <Chessboard
-          position={fen}
-          onPieceDrop={onPieceDrop}
-          boardOrientation={HUMAN_COLOR === "w" ? "white" : "black"}
-          arePiecesDraggable={!status}
-        />
+      <div className="board-wrap" ref={boardContainerRef}>
+        {boardWidth > 0 && (
+          <Chessboard
+            key={boardWidth}
+            boardWidth={boardWidth}
+            position={fen}
+            onPieceDrop={onPieceDrop}
+            boardOrientation={boardOrientation}
+            arePiecesDraggable={!status}
+          />
+        )}
       </div>
       {botThinking && <p className="bot-thinking">Bot is thinking…</p>}
       {!status && (
@@ -201,6 +213,9 @@ export default function Board({ difficulty, onGameEnd, onRecap, onCouncilReport 
           Resign
         </button>
       )}
+      <button className="flip-button" onClick={() => setFlipped((f) => !f)}>
+        Flip board
+      </button>
       {status && <p className="game-status">{status}</p>}
       <MoveHistory pgn={pgn} />
       <CouncilPanel messages={councilMessages} recap={recap} />

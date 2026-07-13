@@ -4,6 +4,7 @@ import { createGame, tryMove, toFen } from "../lib/gameLogic.js";
 import { socket } from "../lib/multiplayerSocket.js";
 import { Engine } from "../engine/stockfishWorker.js";
 import { analyzeGame } from "../lib/gameAnalysis.js";
+import { useBoardWidth } from "../hooks/useBoardWidth.js";
 import CouncilPanel from "./CouncilPanel.jsx";
 import CouncilReport from "./CouncilReport.jsx";
 
@@ -38,6 +39,8 @@ export default function MultiplayerBoard({ myColor }) {
   const unmountedRef = useRef(false);
   const [fen, setFen] = useState(toFen(gameRef.current));
   const [status, setStatus] = useState(null);
+  const [boardContainerRef, boardWidth] = useBoardWidth();
+  const [flipped, setFlipped] = useState(false); // CM-201 test scaffolding: no flip control existed before
   const [councilMessages, setCouncilMessages] = useState([]);
   const [recap, setRecap] = useState(null);
   const [definingMoves, setDefiningMoves] = useState([]);
@@ -135,21 +138,33 @@ export default function MultiplayerBoard({ myColor }) {
     socket.emit("resign");
   }
 
+  const baseOrientation = myColor === "w" ? "white" : "black";
+  const boardOrientation = flipped
+    ? (baseOrientation === "white" ? "black" : "white")
+    : baseOrientation;
+
   return (
     <div className="board-screen">
-      <div className="board-wrap">
-        <Chessboard
-          position={fen}
-          onPieceDrop={onPieceDrop}
-          boardOrientation={myColor === "w" ? "white" : "black"}
-          arePiecesDraggable={!status}
-        />
+      <div className="board-wrap" ref={boardContainerRef}>
+        {boardWidth > 0 && (
+          <Chessboard
+            key={boardWidth}
+            boardWidth={boardWidth}
+            position={fen}
+            onPieceDrop={onPieceDrop}
+            boardOrientation={boardOrientation}
+            arePiecesDraggable={!status}
+          />
+        )}
       </div>
       {!status && (
         <button className="resign-button" onClick={handleResign}>
           Resign
         </button>
       )}
+      <button className="flip-button" onClick={() => setFlipped((f) => !f)}>
+        Flip board
+      </button>
       {status && <p className="game-status">{status}</p>}
       <CouncilPanel messages={councilMessages} recap={recap} />
       {status && (
