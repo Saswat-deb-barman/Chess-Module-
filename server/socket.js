@@ -126,7 +126,7 @@ export function registerSocketHandlers(io) {
       const moment = detectMoment(room.game, applied);
       if (moment) {
         getPing({ moment, san: applied.san }).then((message) => {
-          if (message) io.to(room.code).emit("councilPing", { message });
+          if (message) io.to(room.code).emit("councilPing", { message, side: applied.color });
         });
       }
 

@@ -98,8 +98,8 @@ export default function MultiplayerBoard({ myColor }) {
     function handleOpponentDisconnected() {
       setStatus((current) => current ?? "Your opponent disconnected.");
     }
-    function handleCouncilPing({ message }) {
-      setCouncilMessages((prev) => [...prev, message]);
+    function handleCouncilPing({ message, side }) {
+      setCouncilMessages((prev) => [...prev, { side, text: message }]);
     }
     function handleCouncilRecap({ message }) {
       setRecap(message);

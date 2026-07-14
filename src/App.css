@@ -430,12 +430,46 @@ h1 {
   margin-bottom: 6px;
 }
 
-.council-ping {
-  background: #f3ede0;
-  border-radius: 8px;
-  padding: 8px 10px;
-  font-size: 0.85rem;
-  margin: 0 0 6px;
+.commentary-bubble {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  margin: 0 0 8px;
+  border: 1px solid;
+}
+
+.commentary-bubble--white {
+  background: #f5f3ee;
+  color: #1a1a1a;
+  border-color: rgba(0, 0, 0, 0.15);
+}
+
+.commentary-bubble--black {
+  background: #1a1a1a;
+  color: #f5f3ee;
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.commentary-bubble__avatar {
+  font-size: 1.1rem;
+  line-height: 1.4;
+}
+
+.commentary-bubble__speaker {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  opacity: 0.65;
+  margin-bottom: 2px;
+}
+
+.commentary-bubble__text {
+  margin: 0;
+  font-size: 0.9rem;
 }
 
 .council-recap {

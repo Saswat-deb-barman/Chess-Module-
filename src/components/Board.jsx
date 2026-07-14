@@ -67,7 +67,7 @@ export default function Board({ difficulty, onGameEnd, onRecap, onCouncilReport 
     const moment = detectMoment(game, move);
     if (!moment) return;
     pingCouncil({ moment, san: move.san }).then((message) => {
-      if (message) setCouncilMessages((prev) => [...prev, message]);
+      if (message) setCouncilMessages((prev) => [...prev, { side: move.color, text: message }]);
     });
   }, []);
 
