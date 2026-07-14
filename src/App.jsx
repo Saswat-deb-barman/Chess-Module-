@@ -9,7 +9,7 @@ import { useAuth } from "./lib/auth.jsx";
 import { saveGame, updateGameRecap, updateGameCouncilReport } from "./lib/games.js";
 
 export default function App() {
-  const { user, idToken, signOut } = useAuth();
+  const { user, idToken, signOut, enabled } = useAuth();
   // A shared room link (?room=CODE) should land straight in the friend
   // flow — FriendLobby's own effect that reads this param never gets a
   // chance to run if this component isn't mounted in the first place.
@@ -81,67 +81,80 @@ export default function App() {
     }
   }
 
+  // CM-208: no guest play once sign-in is actually configured — signed
+  // out sees only the door in, not the app behind it. When auth itself
+  // isn't configured (enabled: false, e.g. local dev without
+  // VITE_GOOGLE_CLIENT_ID), the app keeps behaving exactly as it always
+  // has: guest-only, no gate, since there's nothing to sign in *to*.
+  const canPlay = !enabled || user;
+
   return (
     <main className="app">
       <SignInButton />
       <h1>Chess by Alchemist</h1>
 
-      <div className="top-mode-toggle">
-        <button
-          className={`difficulty-option ${topMode === "bot" ? "active" : ""}`}
-          onClick={() => setTopMode("bot")}
-        >
-          Play the bot
-        </button>
-        <button
-          className={`difficulty-option ${topMode === "friend" ? "active" : ""}`}
-          onClick={() => setTopMode("friend")}
-        >
-          Play a friend
-        </button>
-      </div>
-
-      {topMode === "bot" && (
+      {!canPlay ? (
+        <p className="landing-message">Sign in with Google to play.</p>
+      ) : (
         <>
-          <DifficultySelector
-            value={difficulty}
-            onChange={setDifficulty}
-            disabled={phase === "playing"}
-          />
-
-          {phase === "setup" && (
-            <button className="start-button" onClick={startGame}>
-              Start game
+          <div className="top-mode-toggle">
+            <button
+              className={`difficulty-option ${topMode === "bot" ? "active" : ""}`}
+              onClick={() => setTopMode("bot")}
+            >
+              Play the bot
             </button>
+            <button
+              className={`difficulty-option ${topMode === "friend" ? "active" : ""}`}
+              onClick={() => setTopMode("friend")}
+            >
+              Play a friend
+            </button>
+          </div>
+
+          {topMode === "bot" && (
+            <>
+              <DifficultySelector
+                value={difficulty}
+                onChange={setDifficulty}
+                disabled={phase === "playing"}
+              />
+
+              {phase === "setup" && (
+                <button className="start-button" onClick={startGame}>
+                  Start game
+                </button>
+              )}
+
+              {phase !== "setup" && (
+                <Board
+                  key={gameKey}
+                  difficulty={difficulty}
+                  onGameEnd={handleGameEnd}
+                  onRecap={handleRecap}
+                  onCouncilReport={handleCouncilReport}
+                />
+              )}
+
+              {phase === "ended" && (
+                <div className="post-game">
+                  <h2>{result?.reason}</h2>
+                  <button onClick={newGame}>New game</button>
+                </div>
+              )}
+            </>
           )}
 
-          {phase !== "setup" && (
-            <Board
-              key={gameKey}
-              difficulty={difficulty}
-              onGameEnd={handleGameEnd}
-              onRecap={handleRecap}
-              onCouncilReport={handleCouncilReport}
-            />
-          )}
+          {topMode === "friend" &&
+            (friendGame ? (
+              <MultiplayerBoard myColor={friendGame.myColor} />
+            ) : (
+              <FriendLobby onGameStart={setFriendGame} />
+            ))}
 
-          {phase === "ended" && (
-            <div className="post-game">
-              <h2>{result?.reason}</h2>
-              <button onClick={newGame}>New game</button>
-            </div>
-          )}
+          <GameHistory refreshKey={historyRefreshKey} />
         </>
       )}
-
-      {topMode === "friend" &&
-        (friendGame ? (
-          <MultiplayerBoard myColor={friendGame.myColor} />
-        ) : (
-          <FriendLobby onGameStart={setFriendGame} />
-        ))}
-
-      <GameHistory refreshKey={historyRefreshKey} />
     </main>
   );
 }
