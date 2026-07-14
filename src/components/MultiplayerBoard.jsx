@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Chessboard } from "react-chessboard";
-import { createGame, tryMove, toFen, isMyTurn } from "../lib/gameLogic.js";
+import { createGame, tryMove, toFen, toPgn, isMyTurn, getPositionAtPly } from "../lib/gameLogic.js";
 import { socket } from "../lib/multiplayerSocket.js";
 import { Engine } from "../engine/stockfishWorker.js";
 import { analyzeGame } from "../lib/gameAnalysis.js";
@@ -11,6 +11,7 @@ import { useCheckAlert } from "../hooks/useCheckAlert.js";
 import { buildMoveHighlightStyles } from "./MoveHighlightLayer.jsx";
 import TurnIndicator from "./TurnIndicator.jsx";
 import CheckToast from "./CheckToast.jsx";
+import GameRail from "./GameRail.jsx";
 import CouncilPanel from "./CouncilPanel.jsx";
 import CouncilReport from "./CouncilReport.jsx";
 
@@ -48,6 +49,7 @@ export default function MultiplayerBoard({ myColor }) {
   const [boardContainerRef, boardWidth] = useBoardWidth();
   const [flipped, setFlipped] = useState(false); // CM-201 test scaffolding: no flip control existed before
   const [selectedSquare, setSelectedSquare] = useState(null);
+  const [previewPly, setPreviewPly] = useState(null); // null = live; a ply index = read-only preview
   const legalTargets = useLegalTargets(gameRef.current, selectedSquare, fen);
   const checkAlert = useCheckAlert(gameRef.current, fen);
   const [councilMessages, setCouncilMessages] = useState([]);
@@ -192,6 +194,8 @@ export default function MultiplayerBoard({ myColor }) {
     : baseOrientation;
 
   const activeColor = gameRef.current.turn();
+  const isPreviewing = previewPly !== null;
+  const displayFen = isPreviewing ? getPositionAtPly(gameRef.current, previewPly) : fen;
 
   return (
     <div className="board-screen">
@@ -206,15 +210,19 @@ export default function MultiplayerBoard({ myColor }) {
           <Chessboard
             key={boardWidth}
             boardWidth={boardWidth}
-            position={fen}
-            onPieceDrop={onPieceDrop}
-            onSquareClick={onSquareClick}
-            customSquareStyles={buildMoveHighlightStyles(selectedSquare, legalTargets, checkAlert.checkedKingSquare)}
+            position={displayFen}
+            onPieceDrop={isPreviewing ? () => false : onPieceDrop}
+            onSquareClick={isPreviewing ? () => {} : onSquareClick}
+            customSquareStyles={
+              isPreviewing ? {} : buildMoveHighlightStyles(selectedSquare, legalTargets, checkAlert.checkedKingSquare)
+            }
             boardOrientation={boardOrientation}
-            arePiecesDraggable={!status}
+            arePiecesDraggable={!status && !isPreviewing}
           />
         )}
-        {checkAlert.checkedColor === myColor && !checkAlert.isCheckmate && <CheckToast key={fen} />}
+        {!isPreviewing && checkAlert.checkedColor === myColor && !checkAlert.isCheckmate && (
+          <CheckToast key={fen} />
+        )}
       </div>
       {!status && (
         <button className="resign-button" onClick={handleResign}>
@@ -225,6 +233,14 @@ export default function MultiplayerBoard({ myColor }) {
         Flip board
       </button>
       {status && <p className="game-status">{status}</p>}
+      <GameRail
+        game={gameRef.current}
+        fen={fen}
+        pgn={toPgn(gameRef.current)}
+        previewPly={previewPly}
+        onSelectPly={setPreviewPly}
+        onBackToLive={() => setPreviewPly(null)}
+      />
       <CouncilPanel messages={councilMessages} recap={recap} />
       {status && (
         <CouncilReport definingMoves={definingMoves} report={councilReport} loading={councilAnalyzing} />

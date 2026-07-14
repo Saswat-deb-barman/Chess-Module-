@@ -114,3 +114,19 @@ export function getKingSquare(game, color) {
   }
   return null;
 }
+
+/**
+ * CM-205: FEN of the position after replaying the live game's moves up
+ * to (and including) `plyIndex`, for the move-list's read-only preview.
+ * Builds a throwaway Chess instance rather than mutating `game` — the
+ * live game position must never change just because a past ply was
+ * clicked.
+ */
+export function getPositionAtPly(game, plyIndex) {
+  const preview = new Chess();
+  const sanHistory = game.history();
+  for (let i = 0; i <= plyIndex && i < sanHistory.length; i++) {
+    preview.move(sanHistory[i]);
+  }
+  return toFen(preview);
+}

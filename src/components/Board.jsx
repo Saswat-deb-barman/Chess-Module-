@@ -1,6 +1,15 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Chessboard } from "react-chessboard";
-import { createGame, tryMove, getGameOverReason, getResultTag, toFen, toPgn, isMyTurn } from "../lib/gameLogic.js";
+import {
+  createGame,
+  tryMove,
+  getGameOverReason,
+  getResultTag,
+  toFen,
+  toPgn,
+  isMyTurn,
+  getPositionAtPly,
+} from "../lib/gameLogic.js";
 import { Engine, parseUciMove } from "../engine/stockfishWorker.js";
 import { pingCouncil, recapCouncil, reportCouncil } from "../lib/council.js";
 import { analyzeGame } from "../lib/gameAnalysis.js";
@@ -12,7 +21,7 @@ import { buildMoveHighlightStyles } from "./MoveHighlightLayer.jsx";
 import Clock, { INITIAL_TIMES } from "./Clock.jsx";
 import TurnIndicator from "./TurnIndicator.jsx";
 import CheckToast from "./CheckToast.jsx";
-import MoveHistory from "./MoveHistory.jsx";
+import GameRail from "./GameRail.jsx";
 import CouncilPanel from "./CouncilPanel.jsx";
 import CouncilReport from "./CouncilReport.jsx";
 
@@ -52,6 +61,7 @@ export default function Board({ difficulty, onGameEnd, onRecap, onCouncilReport 
   const [boardContainerRef, boardWidth] = useBoardWidth();
   const [flipped, setFlipped] = useState(false); // CM-201 test scaffolding: no flip control existed before
   const [selectedSquare, setSelectedSquare] = useState(null);
+  const [previewPly, setPreviewPly] = useState(null); // null = live; a ply index = read-only preview
   const legalTargets = useLegalTargets(gameRef.current, selectedSquare, fen);
   const checkAlert = useCheckAlert(gameRef.current, fen);
   const [councilMessages, setCouncilMessages] = useState([]);
@@ -236,6 +246,8 @@ export default function Board({ difficulty, onGameEnd, onRecap, onCouncilReport 
     : baseOrientation;
 
   const activeColor = gameRef.current.turn();
+  const isPreviewing = previewPly !== null;
+  const displayFen = isPreviewing ? getPositionAtPly(gameRef.current, previewPly) : fen;
 
   return (
     <div className="board-screen">
@@ -261,15 +273,19 @@ export default function Board({ difficulty, onGameEnd, onRecap, onCouncilReport 
           <Chessboard
             key={boardWidth}
             boardWidth={boardWidth}
-            position={fen}
-            onPieceDrop={onPieceDrop}
-            onSquareClick={onSquareClick}
-            customSquareStyles={buildMoveHighlightStyles(selectedSquare, legalTargets, checkAlert.checkedKingSquare)}
+            position={displayFen}
+            onPieceDrop={isPreviewing ? () => false : onPieceDrop}
+            onSquareClick={isPreviewing ? () => {} : onSquareClick}
+            customSquareStyles={
+              isPreviewing ? {} : buildMoveHighlightStyles(selectedSquare, legalTargets, checkAlert.checkedKingSquare)
+            }
             boardOrientation={boardOrientation}
-            arePiecesDraggable={!status}
+            arePiecesDraggable={!status && !isPreviewing}
           />
         )}
-        {checkAlert.checkedColor === HUMAN_COLOR && !checkAlert.isCheckmate && <CheckToast key={fen} />}
+        {!isPreviewing && checkAlert.checkedColor === HUMAN_COLOR && !checkAlert.isCheckmate && (
+          <CheckToast key={fen} />
+        )}
       </div>
       {botThinking && <p className="bot-thinking">Bot is thinking…</p>}
       {!status && (
@@ -281,7 +297,14 @@ export default function Board({ difficulty, onGameEnd, onRecap, onCouncilReport 
         Flip board
       </button>
       {status && <p className="game-status">{status}</p>}
-      <MoveHistory pgn={pgn} />
+      <GameRail
+        game={gameRef.current}
+        fen={fen}
+        pgn={pgn}
+        previewPly={previewPly}
+        onSelectPly={setPreviewPly}
+        onBackToLive={() => setPreviewPly(null)}
+      />
       <CouncilPanel messages={councilMessages} recap={recap} />
       {status && (
         <CouncilReport definingMoves={definingMoves} report={councilReport} loading={councilAnalyzing} />
