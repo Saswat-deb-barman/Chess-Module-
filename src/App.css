@@ -363,8 +363,24 @@ h1 {
 }
 
 .board-wrap {
+  position: relative;
   margin: 0 auto;
   max-width: 420px;
+}
+
+.check-toast {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  padding: 4px 14px;
+  border-radius: 14px;
+  background: #c94f4f;
+  color: white;
+  font-size: 0.8rem;
+  font-weight: 600;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
 }
 
 .bot-thinking {

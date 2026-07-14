@@ -98,3 +98,19 @@ export function getLegalMoves(game, square) {
   if (!square) return [];
   return game.moves({ square, verbose: true });
 }
+
+/**
+ * Square the given color's king currently sits on, or null if somehow
+ * absent from the board. chess.js 1.4.0 has no public king-square getter
+ * (only a private `_kings` field), so this is a flat scan of `game.board()`
+ * — cheap (64 cells) and only called when rendering the check glow.
+ */
+export function getKingSquare(game, color) {
+  const board = game.board();
+  for (const row of board) {
+    for (const cell of row) {
+      if (cell && cell.type === "k" && cell.color === color) return cell.square;
+    }
+  }
+  return null;
+}

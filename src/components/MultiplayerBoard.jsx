@@ -7,8 +7,10 @@ import { analyzeGame } from "../lib/gameAnalysis.js";
 import { useBoardWidth } from "../hooks/useBoardWidth.js";
 import { useLegalTargets } from "../hooks/useLegalTargets.js";
 import { useDocumentTitle } from "../hooks/useDocumentTitle.js";
+import { useCheckAlert } from "../hooks/useCheckAlert.js";
 import { buildMoveHighlightStyles } from "./MoveHighlightLayer.jsx";
 import TurnIndicator from "./TurnIndicator.jsx";
+import CheckToast from "./CheckToast.jsx";
 import CouncilPanel from "./CouncilPanel.jsx";
 import CouncilReport from "./CouncilReport.jsx";
 
@@ -47,6 +49,7 @@ export default function MultiplayerBoard({ myColor }) {
   const [flipped, setFlipped] = useState(false); // CM-201 test scaffolding: no flip control existed before
   const [selectedSquare, setSelectedSquare] = useState(null);
   const legalTargets = useLegalTargets(gameRef.current, selectedSquare, fen);
+  const checkAlert = useCheckAlert(gameRef.current, fen);
   const [councilMessages, setCouncilMessages] = useState([]);
   const [recap, setRecap] = useState(null);
   const [definingMoves, setDefiningMoves] = useState([]);
@@ -206,11 +209,12 @@ export default function MultiplayerBoard({ myColor }) {
             position={fen}
             onPieceDrop={onPieceDrop}
             onSquareClick={onSquareClick}
-            customSquareStyles={buildMoveHighlightStyles(selectedSquare, legalTargets)}
+            customSquareStyles={buildMoveHighlightStyles(selectedSquare, legalTargets, checkAlert.checkedKingSquare)}
             boardOrientation={boardOrientation}
             arePiecesDraggable={!status}
           />
         )}
+        {checkAlert.checkedColor === myColor && !checkAlert.isCheckmate && <CheckToast key={fen} />}
       </div>
       {!status && (
         <button className="resign-button" onClick={handleResign}>

@@ -17,20 +17,35 @@ const CAPTURE_STYLE = {
   boxShadow: "inset 0 0 0 4px rgba(0,0,0,0.28)",
 };
 
+// CM-204: red radial glow on the checked king's square. Uses
+// backgroundImage (not boxShadow) specifically so it composes cleanly
+// with SELECTED_STYLE's boxShadow-based ring if a player selects their
+// own king while in check — both can apply to the same square at once.
+const CHECK_GLOW_STYLE = {
+  backgroundImage:
+    "radial-gradient(circle, rgba(201,79,79,0.6) 0%, rgba(201,79,79,0.28) 55%, transparent 75%)",
+  backgroundPosition: "center",
+  backgroundRepeat: "no-repeat",
+};
+
 /**
- * CM-203: builds the `customSquareStyles` object react-chessboard expects,
- * from the currently selected square and its legal targets (verbose chess.js
- * move objects, see useLegalTargets). Pure function, no React involved —
- * despite the .jsx extension (kept for consistency with the plan/ticket
- * naming), there's no JSX here to render.
+ * CM-203/CM-204: builds the `customSquareStyles` object react-chessboard
+ * expects, from the currently selected square, its legal targets (verbose
+ * chess.js move objects, see useLegalTargets), and the checked king's
+ * square if any. Pure function, no React involved — despite the .jsx
+ * extension (kept for consistency with the plan/ticket naming), there's
+ * no JSX here to render.
  */
-export function buildMoveHighlightStyles(selectedSquare, targets) {
+export function buildMoveHighlightStyles(selectedSquare, targets, checkedKingSquare) {
   const styles = {};
   if (selectedSquare) {
     styles[selectedSquare] = SELECTED_STYLE;
   }
   for (const move of targets) {
     styles[move.to] = move.captured ? CAPTURE_STYLE : TARGET_STYLE;
+  }
+  if (checkedKingSquare) {
+    styles[checkedKingSquare] = { ...styles[checkedKingSquare], ...CHECK_GLOW_STYLE };
   }
   return styles;
 }
