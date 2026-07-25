@@ -42,6 +42,18 @@ export async function migrate() {
     -- the deep breakdown). jsonb, not a new table — same one-table
     -- philosophy as the rest of this schema.
     alter table games add column if not exists council_report jsonb;
+    -- Wave 1: the beginner/advanced analysis-mode preference. Nullable,
+    -- no default — "no row yet" / "analysis_mode is null" is a distinct
+    -- state from "explicitly beginner," which is exactly what the
+    -- one-time onboarding chooser needs to know whether to show itself.
+    -- No users table exists (identity is purely the verified Google
+    -- token's {sub, email}); this is keyed by the same google_sub every
+    -- ownership check above already uses.
+    create table if not exists user_settings (
+      google_sub text primary key,
+      analysis_mode text,
+      updated_at timestamptz not null default now()
+    );
   `);
 }
 
@@ -140,6 +152,31 @@ export async function getGame({ googleSub, gameId }) {
     [gameId, googleSub]
   );
   return rows[0] ?? null;
+}
+
+/**
+ * Wave 1: analysisMode preference. `analysisMode: null` means "no row
+ * yet, unset" — the frontend's onboarding chooser reads this to decide
+ * whether to show itself. Never defaulted to "beginner" here; the
+ * default is applied only where the value is *consumed*, so this stays
+ * an honest read of what the user actually chose (or didn't).
+ */
+export async function getUserSettings(googleSub) {
+  if (!pool) return { analysisMode: null };
+  const { rows } = await pool.query(`select analysis_mode from user_settings where google_sub = $1`, [googleSub]);
+  return { analysisMode: rows[0]?.analysis_mode ?? null };
+}
+
+export async function setUserSettings({ googleSub, analysisMode }) {
+  if (!pool) return { analysisMode: null };
+  const { rows } = await pool.query(
+    `insert into user_settings (google_sub, analysis_mode, updated_at)
+     values ($1, $2, now())
+     on conflict (google_sub) do update set analysis_mode = $2, updated_at = now()
+     returning analysis_mode`,
+    [googleSub, analysisMode]
+  );
+  return { analysisMode: rows[0]?.analysis_mode ?? null };
 }
 
 export async function listGames(googleSub) {

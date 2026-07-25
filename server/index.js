@@ -4,7 +4,16 @@ import express from "express";
 import cors from "cors";
 import { Server } from "socket.io";
 import { getPing, getRecap, getCouncilReport, answerQuestion } from "./council.js";
-import { migrate, saveGame, listGames, updateGameRecap, updateGameCouncilReport, getGame } from "./db.js";
+import {
+  migrate,
+  saveGame,
+  listGames,
+  updateGameRecap,
+  updateGameCouncilReport,
+  getGame,
+  getUserSettings,
+  setUserSettings,
+} from "./db.js";
 import { requireAuth, verifyGoogleToken } from "./auth.js";
 import { registerSocketHandlers } from "./socket.js";
 
@@ -75,6 +84,21 @@ app.patch("/games/:id", requireAuth, async (req, res) => {
     ? await updateGameRecap({ googleSub: req.identity.sub, gameId: req.params.id, recap })
     : await updateGameCouncilReport({ googleSub: req.identity.sub, gameId: req.params.id, councilReport });
   res.json({ game });
+});
+
+// Wave 1: the beginner/advanced analysis-mode preference. null means
+// "unset" — the frontend's onboarding chooser uses that to decide
+// whether to show itself; the "beginner" default is applied only where
+// the value is actually consumed (report rendering, drills), not here.
+app.get("/me/settings", requireAuth, async (req, res) => {
+  const settings = await getUserSettings(req.identity.sub);
+  res.json(settings);
+});
+
+app.patch("/me/settings", requireAuth, async (req, res) => {
+  const { analysisMode } = req.body ?? {};
+  const settings = await setUserSettings({ googleSub: req.identity.sub, analysisMode });
+  res.json(settings);
 });
 
 app.post("/games/:id/ask", requireAuth, async (req, res) => {
