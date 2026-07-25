@@ -45,7 +45,7 @@ import { useAnalysisMode } from "../lib/analysisMode.jsx";
  */
 const PIECE_SET = buildPieceSet();
 
-export default function MultiplayerBoard({ myColor }) {
+export default function MultiplayerBoard({ myColor, onLeave }) {
   const { mode: analysisMode } = useAnalysisMode();
   const gameRef = useRef(createGame({ white: "Player 1", black: "Player 2" }));
   const engineRef = useRef(null);
@@ -241,7 +241,16 @@ export default function MultiplayerBoard({ myColor }) {
       <button className="flip-button" onClick={() => setFlipped((f) => !f)}>
         Flip board
       </button>
-      {status && <p className="game-status">{status}</p>}
+      {status && (
+        <div className="post-game">
+          <p className="game-status">{status}</p>
+          {onLeave && (
+            <button className="start-button" onClick={onLeave}>
+              Back to dashboard
+            </button>
+          )}
+        </div>
+      )}
       <GameRail
         game={gameRef.current}
         fen={fen}

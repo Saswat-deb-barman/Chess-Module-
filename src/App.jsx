@@ -58,6 +58,16 @@ export default function App() {
     setPhase(enabled && user ? "home" : "setup");
   }
 
+  // Friend mode has no phase enum of its own (MultiplayerBoard tracks its
+  // own "status" internally) — this is the equivalent of newGame() for
+  // that path: drop the finished room so "Play a friend" starts a fresh
+  // one, and land back on the dashboard the same way finishing a bot
+  // game does.
+  function leaveFriendGame() {
+    setFriendGame(null);
+    setPhase(enabled && user ? "home" : "setup");
+  }
+
   function handleGameEnd(res) {
     setResult(res);
     setPhase("ended");
@@ -193,7 +203,7 @@ export default function App() {
 
           {topMode === "friend" &&
             (friendGame ? (
-              <MultiplayerBoard myColor={friendGame.myColor} />
+              <MultiplayerBoard myColor={friendGame.myColor} onLeave={leaveFriendGame} />
             ) : (
               <FriendLobby onGameStart={setFriendGame} />
             ))}
