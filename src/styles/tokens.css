@@ -1,0 +1,89 @@
+/**
+ * The Green Room — token layer. Every component reads from this file.
+ * No component should introduce a new hardcoded hex value — that rule
+ * is what keeps the aesthetic swappable later. Ported verbatim from
+ * version-updates/chess-app-ui-ux's kit build (design/green-room-kit).
+ */
+:root {
+  /* ---- surfaces: green felt ---- */
+  --felt-950: #08110d; /* page background */
+  --felt-900: #0e1b15; /* panel, card */
+  --felt-800: #14251d; /* raised panel, rail, input */
+  --felt-700: #1c3226; /* hover state */
+  --line-1: #24402f; /* hairline */
+  --line-2: #2f5039; /* emphasised border */
+
+  /* ---- ink: aged cream ---- */
+  --paper-50: #f6f1e3; /* primary text */
+  --paper-100: #efe9da; /* body text */
+  --paper-300: #cfc6b0; /* secondary text */
+  --paper-500: #93a697; /* muted, labels, disabled */
+
+  /* ---- accent: brass ---- */
+  --brass-300: #e7c978; /* hover */
+  --brass-500: #d4a94b; /* the accent */
+  --brass-700: #8a7434; /* pressed, dim */
+  --brass-ink: #14100a; /* text on a brass fill */
+  --lamp: rgba(212, 169, 75, 0.38);
+
+  /* ---- semantic ---- */
+  --win: #6fae6f;
+  --loss: #c25050;
+  --draw: var(--paper-500);
+  --alarm: #c74440; /* check */
+  --warn: #d99a3d; /* disconnect, low clock */
+
+  /* ---- the board ---- */
+  --sq-light: #e9dcc3;
+  --sq-dark: #7a9471;
+  --sq-frame: #24312a; /* the 6px board bezel */
+  --sq-lastmove: rgba(212, 169, 75, 0.3);
+  --sq-select: rgba(212, 169, 75, 0.55);
+  --sq-dot: rgba(20, 24, 20, 0.42); /* legal move, empty square */
+  --sq-dot-hi: rgba(212, 169, 75, 0.75); /* legal move, hovered */
+  --sq-check: rgba(199, 68, 64, 0.85);
+  --sq-premove: rgba(147, 166, 151, 0.35);
+
+  /* ---- type ---- */
+  --font-display: "Fraunces", Georgia, serif;
+  --font-ui: "Instrument Sans", system-ui, sans-serif;
+
+  --t-display: 44px; /* Fraunces 650, line-height 1.05 */
+  --t-h1: 32px; /* Fraunces 650, 1.15 */
+  --t-h2: 22px; /* Fraunces 650, 1.2 */
+  --t-h3: 17px; /* Instrument Sans 600, 1.3 */
+  --t-body: 15px; /* Instrument Sans 400, 1.55 */
+  --t-small: 13px; /* Instrument Sans 400, 1.5 */
+  --t-micro: 11px; /* Instrument Sans 600, uppercase, 0.22em tracking */
+
+  /* clocks, ratings, scores, move numbers: font-variant-numeric: tabular-nums.
+     A clock whose digits change width is a defect. */
+
+  /* ---- space (4-base) ---- */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 24px;
+  --s-6: 32px;
+  --s-7: 48px;
+  --s-8: 64px;
+
+  /* ---- radius ---- */
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+  --r-pill: 999px;
+
+  /* ---- elevation ---- */
+  --e-1: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --e-2: 0 8px 24px rgba(0, 0, 0, 0.38);
+  --e-3: 0 24px 60px rgba(0, 0, 0, 0.55);
+  --e-lamp: 0 0 0 2px var(--brass-500), 0 0 28px var(--lamp);
+
+  /* ---- motion ---- */
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --dur-fast: 120ms;
+  --dur: 200ms;
+  --dur-slow: 420ms;
+}

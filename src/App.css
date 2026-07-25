@@ -1,11 +1,16 @@
 :root {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  color: #1a1a1a;
+  font-family: var(--font-ui);
+  color: var(--paper-100);
+}
+
+:focus-visible {
+  outline: 2px solid var(--brass-500);
+  outline-offset: 2px;
 }
 
 body {
   margin: 0;
-  background: #fafaf8;
+  background: var(--felt-950);
 }
 
 .app {
@@ -17,15 +22,16 @@ body {
 
 .landing-message {
   margin-top: 24px;
-  color: #666;
+  color: var(--paper-300);
   font-size: 0.95rem;
 }
 
 h1 {
-  font-size: 1.25rem;
-  font-weight: 600;
+  font-family: var(--font-display);
+  font-weight: 650;
+  font-size: var(--t-h1);
   margin-bottom: 24px;
-  color: #333;
+  color: var(--paper-50);
 }
 
 .top-mode-toggle {
@@ -97,16 +103,22 @@ h1 {
 
 .auth-email {
   font-size: 0.8rem;
-  color: #666;
+  color: var(--paper-300);
 }
 
 .auth-signout {
   font-size: 0.8rem;
-  border: 1px solid #ddd;
-  background: white;
-  border-radius: 14px;
+  border: 1px solid var(--line-1);
+  background: transparent;
+  color: var(--paper-300);
+  border-radius: var(--r-pill);
   padding: 4px 12px;
   cursor: pointer;
+  transition: background var(--dur-fast) var(--ease);
+}
+
+.auth-signout:hover {
+  background: var(--felt-800);
 }
 
 .game-history {
@@ -240,7 +252,7 @@ h1 {
 .difficulty-selector label {
   display: block;
   font-size: 0.85rem;
-  color: #666;
+  color: var(--paper-300);
   margin-bottom: 8px;
 }
 
@@ -250,19 +262,30 @@ h1 {
   justify-content: center;
 }
 
+/* Also reused, unmodified, by App.jsx's top-mode-toggle buttons
+   ("Play the bot" / "Play a friend") — neutral/outline treatment per
+   the brass-rationing rule; the screen's one brass moment is the Start
+   button below, not these. */
 .difficulty-option {
   padding: 8px 18px;
-  border-radius: 20px;
-  border: 1px solid #ddd;
-  background: white;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line-1);
+  background: var(--felt-900);
+  color: var(--paper-300);
   cursor: pointer;
   font-size: 0.9rem;
+  transition: background var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
+}
+
+.difficulty-option:hover:not(:disabled) {
+  background: var(--felt-800);
 }
 
 .difficulty-option.active {
-  background: #1a1a1a;
-  color: white;
-  border-color: #1a1a1a;
+  background: var(--felt-800);
+  color: var(--paper-50);
+  border-color: var(--line-2);
+  font-weight: 600;
 }
 
 .difficulty-option:disabled {
@@ -272,18 +295,24 @@ h1 {
 
 .difficulty-hint {
   font-size: 0.75rem;
-  color: #999;
+  color: var(--paper-500);
   margin-top: 6px;
 }
 
 .start-button {
   padding: 10px 28px;
-  border-radius: 24px;
+  border-radius: var(--r-pill);
   border: none;
-  background: #2d6a4f;
-  color: white;
+  background: var(--brass-500);
+  color: var(--brass-ink);
+  font-weight: 600;
   font-size: 1rem;
   cursor: pointer;
+  transition: background var(--dur-fast) var(--ease);
+}
+
+.start-button:hover {
+  background: var(--brass-300);
 }
 
 .board-screen {
