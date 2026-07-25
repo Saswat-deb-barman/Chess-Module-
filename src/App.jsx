@@ -139,7 +139,9 @@ export default function App() {
               {phase === "ended" && (
                 <div className="post-game">
                   <h2>{result?.reason}</h2>
-                  <button onClick={newGame}>New game</button>
+                  <button className="start-button" onClick={newGame}>
+                    New game
+                  </button>
                 </div>
               )}
             </>

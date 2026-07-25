@@ -1,11 +1,10 @@
 const SELECTED_STYLE = {
-  boxShadow: "inset 0 0 0 3px rgba(58, 125, 68, 0.85)",
+  boxShadow: "inset 0 0 0 3px var(--sq-select)",
 };
 
 // Centered dot for a quiet legal move to an empty square.
 const TARGET_STYLE = {
-  backgroundImage:
-    "radial-gradient(circle, rgba(0,0,0,0.28) 22%, transparent 23%)",
+  backgroundImage: "radial-gradient(circle, var(--sq-dot) 26%, transparent 27%)",
   backgroundPosition: "center",
   backgroundRepeat: "no-repeat",
 };
@@ -13,8 +12,9 @@ const TARGET_STYLE = {
 // Ring/cut-corner treatment for a legal move that captures — chess.js's
 // verbose move objects already flag `captured` correctly for en passant,
 // so this single check covers ordinary captures and en passant alike.
+// A ring, not a dot: a capture must never look like a quiet move.
 const CAPTURE_STYLE = {
-  boxShadow: "inset 0 0 0 4px rgba(0,0,0,0.28)",
+  boxShadow: "inset 0 0 0 4px var(--sq-dot)",
 };
 
 // CM-204: red radial glow on the checked king's square. Uses
@@ -22,8 +22,7 @@ const CAPTURE_STYLE = {
 // with SELECTED_STYLE's boxShadow-based ring if a player selects their
 // own king while in check — both can apply to the same square at once.
 const CHECK_GLOW_STYLE = {
-  backgroundImage:
-    "radial-gradient(circle, rgba(201,79,79,0.6) 0%, rgba(201,79,79,0.28) 55%, transparent 75%)",
+  backgroundImage: "radial-gradient(circle, var(--sq-check) 0%, rgba(199,68,64,.45) 55%, transparent 75%)",
   backgroundPosition: "center",
   backgroundRepeat: "no-repeat",
 };

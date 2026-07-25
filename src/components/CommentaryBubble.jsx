@@ -2,11 +2,13 @@
 // text for a black move — both carry a thin border, which is what keeps
 // the white bubble visible against a light page and the black bubble
 // visible against a dark one (without it, one or the other vanishes into
-// the surface behind it).
-const WHITE_BG = "#f5f3ee";
-const WHITE_TEXT = "#1a1a1a";
-const BLACK_BG = "#1a1a1a";
-const BLACK_TEXT = "#f5f3ee";
+// the surface behind it). The actual paint is class-based (App.css's
+// .commentary-bubble--white/--black); the two colors are read from the
+// live token values here, not hardcoded, so this log can never drift
+// from App.css the way a second set of hardcoded hex constants would.
+function resolveToken(name) {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
 
 function relativeLuminance(hex) {
   const [r, g, b] = hex
@@ -29,11 +31,12 @@ let contrastLogged = false;
 function logContrastOnce() {
   if (contrastLogged) return;
   contrastLogged = true;
-  const whiteRatio = contrastRatio(WHITE_BG, WHITE_TEXT).toFixed(2);
-  const blackRatio = contrastRatio(BLACK_BG, BLACK_TEXT).toFixed(2);
-  console.log(
-    `[CommentaryBubble] contrast ratios — white-move bubble: ${whiteRatio}:1, black-move bubble: ${blackRatio}:1 (WCAG AA text minimum: 4.5:1)`
-  );
+  const paper100 = resolveToken("--paper-100");
+  const felt950 = resolveToken("--felt-950");
+  // Both bubbles use the same two colors swapped (white: paper bg / felt
+  // text, black: felt bg / paper text) — one ratio covers both tones.
+  const ratio = contrastRatio(paper100, felt950).toFixed(2);
+  console.log(`[CommentaryBubble] contrast ratio (both tones, colors swapped): ${ratio}:1 (WCAG AA text minimum: 4.5:1)`);
 }
 
 export default function CommentaryBubble({ side, text, speaker = "The Council", avatar = "♟" }) {

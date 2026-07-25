@@ -1,11 +1,16 @@
 :root {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  color: #1a1a1a;
+  font-family: var(--font-ui);
+  color: var(--paper-100);
+}
+
+:focus-visible {
+  outline: 2px solid var(--brass-500);
+  outline-offset: 2px;
 }
 
 body {
   margin: 0;
-  background: #fafaf8;
+  background: var(--felt-950);
 }
 
 .app {
@@ -17,15 +22,16 @@ body {
 
 .landing-message {
   margin-top: 24px;
-  color: #666;
+  color: var(--paper-300);
   font-size: 0.95rem;
 }
 
 h1 {
-  font-size: 1.25rem;
-  font-weight: 600;
+  font-family: var(--font-display);
+  font-weight: 650;
+  font-size: var(--t-h1);
   margin-bottom: 24px;
-  color: #333;
+  color: var(--paper-50);
 }
 
 .top-mode-toggle {
@@ -43,23 +49,61 @@ h1 {
   margin-top: 12px;
 }
 
+.friend-lobby p {
+  color: var(--paper-300);
+  margin: 0;
+}
+
 .friend-lobby label {
   font-size: 0.85rem;
-  color: #666;
+  color: var(--paper-300);
 }
 
 .friend-lobby input {
   width: 220px;
   padding: 8px 12px;
-  border-radius: 20px;
-  border: 1px solid #ddd;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line-1);
+  background: var(--felt-900);
+  color: var(--paper-100);
   font-size: 0.9rem;
   text-align: center;
 }
 
-.room-code {
-  font-size: 1.5rem;
-  font-weight: 700;
+/* The join form's submit button has no class in FriendLobby.jsx —
+   styled by type selector rather than adding one, keeping this a
+   CSS-only pass. Room-code display is this screen's one brass moment
+   (the room code itself is the primary artifact); the button stays
+   neutral/outline, matching "Create a room" (.start-button) already
+   being the screen's real primary CTA. */
+.friend-lobby button[type="submit"] {
+  padding: 8px 18px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line-1);
+  background: var(--felt-900);
+  color: var(--paper-100);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease);
+}
+
+.friend-lobby button[type="submit"]:hover:not(:disabled) {
+  background: var(--felt-800);
+}
+
+.friend-lobby button[type="submit"]:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Scoped under .friend-lobby (not just .room-code) so its specificity
+   beats .friend-lobby p's catch-all below — otherwise the type-selector
+   rule wins on specificity and silently overrides this to paper-300. */
+.friend-lobby .room-code {
+  font-family: var(--font-display);
+  font-weight: 650;
+  font-size: var(--t-display);
+  color: var(--brass-500);
   letter-spacing: 0.1em;
   margin: 0;
 }
@@ -70,18 +114,18 @@ h1 {
 
 .lobby-status {
   font-size: 0.85rem;
-  color: #666;
+  color: var(--paper-300);
 }
 
 .lobby-error {
   font-size: 0.8rem;
-  color: #c94f4f;
+  color: var(--loss);
 }
 
 .lobby-join-link {
   background: none;
   border: none;
-  color: #666;
+  color: var(--paper-300);
   font-size: 0.8rem;
   text-decoration: underline;
   cursor: pointer;
@@ -97,16 +141,22 @@ h1 {
 
 .auth-email {
   font-size: 0.8rem;
-  color: #666;
+  color: var(--paper-300);
 }
 
 .auth-signout {
   font-size: 0.8rem;
-  border: 1px solid #ddd;
-  background: white;
-  border-radius: 14px;
+  border: 1px solid var(--line-1);
+  background: transparent;
+  color: var(--paper-300);
+  border-radius: var(--r-pill);
   padding: 4px 12px;
   cursor: pointer;
+  transition: background var(--dur-fast) var(--ease);
+}
+
+.auth-signout:hover {
+  background: var(--felt-800);
 }
 
 .game-history {
@@ -116,7 +166,7 @@ h1 {
 
 .game-history h3 {
   font-size: 0.85rem;
-  color: #666;
+  color: var(--paper-500);
   margin-bottom: 6px;
 }
 
@@ -128,7 +178,7 @@ h1 {
 }
 
 .game-history-row {
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--line-1);
 }
 
 .game-history-summary {
@@ -142,12 +192,12 @@ h1 {
   border: none;
   cursor: pointer;
   font-size: 0.85rem;
-  color: #1a1a1a;
+  color: var(--paper-100);
   text-align: left;
 }
 
 .game-history-result {
-  color: #666;
+  color: var(--paper-500);
   font-size: 0.8rem;
   white-space: nowrap;
 }
@@ -156,9 +206,9 @@ h1 {
   display: inline-block;
   margin-left: 8px;
   padding: 1px 8px;
-  border-radius: 10px;
-  background: #eee;
-  color: #888;
+  border-radius: var(--r-pill);
+  background: var(--felt-800);
+  color: var(--paper-500);
   font-size: 0.7rem;
   text-transform: uppercase;
   letter-spacing: 0.02em;
@@ -169,17 +219,18 @@ h1 {
 }
 
 .game-history-recap {
-  background: #eef0e6;
-  border-radius: 8px;
+  background: var(--felt-800);
+  border-radius: var(--r-sm);
   padding: 10px;
   font-size: 0.8rem;
   line-height: 1.4;
   margin: 0 0 8px;
+  color: var(--paper-100);
 }
 
 .game-history-recap-empty {
-  background: #f0f0ee;
-  color: #999;
+  background: var(--felt-900);
+  color: var(--paper-500);
   font-style: italic;
 }
 
@@ -195,11 +246,12 @@ h1 {
   font-weight: 600;
   font-size: 0.8rem;
   margin: 0 0 4px;
+  color: var(--paper-50);
 }
 
 .game-chat-answer {
   font-size: 0.8rem;
-  color: #444;
+  color: var(--paper-300);
   margin: 0;
   line-height: 1.4;
 }
@@ -213,19 +265,26 @@ h1 {
 .game-chat-form input {
   flex: 1;
   padding: 6px 10px;
-  border-radius: 14px;
-  border: 1px solid #ddd;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line-1);
+  background: var(--felt-900);
+  color: var(--paper-100);
   font-size: 0.8rem;
 }
 
 .game-chat-form button {
   padding: 6px 14px;
-  border-radius: 14px;
-  border: none;
-  background: #2d6a4f;
-  color: white;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line-1);
+  background: transparent;
+  color: var(--paper-300);
   font-size: 0.8rem;
   cursor: pointer;
+  transition: background var(--dur-fast) var(--ease);
+}
+
+.game-chat-form button:hover:not(:disabled) {
+  background: var(--felt-800);
 }
 
 .game-chat-form button:disabled {
@@ -240,7 +299,7 @@ h1 {
 .difficulty-selector label {
   display: block;
   font-size: 0.85rem;
-  color: #666;
+  color: var(--paper-300);
   margin-bottom: 8px;
 }
 
@@ -250,19 +309,30 @@ h1 {
   justify-content: center;
 }
 
+/* Also reused, unmodified, by App.jsx's top-mode-toggle buttons
+   ("Play the bot" / "Play a friend") — neutral/outline treatment per
+   the brass-rationing rule; the screen's one brass moment is the Start
+   button below, not these. */
 .difficulty-option {
   padding: 8px 18px;
-  border-radius: 20px;
-  border: 1px solid #ddd;
-  background: white;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line-1);
+  background: var(--felt-900);
+  color: var(--paper-300);
   cursor: pointer;
   font-size: 0.9rem;
+  transition: background var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
+}
+
+.difficulty-option:hover:not(:disabled) {
+  background: var(--felt-800);
 }
 
 .difficulty-option.active {
-  background: #1a1a1a;
-  color: white;
-  border-color: #1a1a1a;
+  background: var(--felt-800);
+  color: var(--paper-50);
+  border-color: var(--line-2);
+  font-weight: 600;
 }
 
 .difficulty-option:disabled {
@@ -272,18 +342,24 @@ h1 {
 
 .difficulty-hint {
   font-size: 0.75rem;
-  color: #999;
+  color: var(--paper-500);
   margin-top: 6px;
 }
 
 .start-button {
   padding: 10px 28px;
-  border-radius: 24px;
+  border-radius: var(--r-pill);
   border: none;
-  background: #2d6a4f;
-  color: white;
+  background: var(--brass-500);
+  color: var(--brass-ink);
+  font-weight: 600;
   font-size: 1rem;
   cursor: pointer;
+  transition: background var(--dur-fast) var(--ease);
+}
+
+.start-button:hover {
+  background: var(--brass-300);
 }
 
 .board-screen {
@@ -293,32 +369,34 @@ h1 {
 .resign-button {
   margin-top: 10px;
   padding: 6px 18px;
-  border-radius: 18px;
-  border: 1px solid #c94f4f;
-  background: white;
-  color: #c94f4f;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--loss);
+  background: transparent;
+  color: var(--loss);
   font-size: 0.8rem;
   cursor: pointer;
+  transition: background var(--dur-fast) var(--ease);
 }
 
 .resign-button:hover {
-  background: #fdf1f1;
+  background: var(--felt-800);
 }
 
 .flip-button {
   margin-top: 10px;
   margin-left: 10px;
   padding: 6px 18px;
-  border-radius: 18px;
-  border: 1px solid #999;
-  background: white;
-  color: #444;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line-1);
+  background: transparent;
+  color: var(--paper-300);
   font-size: 0.8rem;
   cursor: pointer;
+  transition: background var(--dur-fast) var(--ease);
 }
 
 .flip-button:hover {
-  background: #f2f2f2;
+  background: var(--felt-800);
 }
 
 .clock-pair {
@@ -332,14 +410,40 @@ h1 {
 
 .clock {
   padding: 4px 10px;
-  border-radius: 8px;
-  background: #eee;
-  color: #888;
+  border-radius: var(--r-sm);
+  background: var(--felt-900);
+  color: var(--paper-500);
+  font-family: var(--font-display);
 }
 
 .clock-active {
-  background: #1a1a1a;
-  color: white;
+  background: var(--felt-800);
+  color: var(--paper-50);
+}
+
+.clock-warn {
+  color: var(--warn);
+}
+
+.clock-alarm {
+  color: var(--alarm);
+  animation: clock-tick-pulse 1s ease-in-out infinite;
+}
+
+@keyframes clock-tick-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .clock-alarm {
+    animation: none;
+  }
 }
 
 .turn-indicator-pair {
@@ -351,27 +455,77 @@ h1 {
 }
 
 .turn-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   padding: 3px 10px;
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   background: transparent;
-  color: #888;
+  color: var(--paper-500);
 }
 
 .turn-indicator--active {
-  background: #eaf3ec;
-  color: #3a7d44;
+  background: var(--felt-800);
+  color: var(--paper-50);
   font-weight: 600;
 }
 
-.board-wrap--active-turn {
-  box-shadow: 0 0 0 2px #3a7d44;
-  border-radius: 4px;
+.turn-lamp {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--felt-700);
+  color: var(--brass-300);
+  font-family: var(--font-display);
+  font-weight: 650;
+  font-size: 10px;
 }
 
+.turn-lamp--on {
+  box-shadow: var(--e-lamp);
+  animation: turn-lamp-breathe 2.4s ease-in-out infinite;
+}
+
+@keyframes turn-lamp-breathe {
+  0%,
+  100% {
+    box-shadow: 0 0 0 2px var(--brass-500), 0 0 18px rgba(212, 169, 75, 0.26);
+  }
+  50% {
+    box-shadow: 0 0 0 2px var(--brass-500), 0 0 34px rgba(212, 169, 75, 0.5);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .turn-lamp--on {
+    animation: none;
+    box-shadow: var(--e-lamp);
+  }
+}
+
+/* Frame bezel is a box-shadow, not a border: useBoardWidth's
+   ResizeObserver measures THIS element's getBoundingClientRect(), and
+   the Chessboard is then rendered at exactly that measured width. A
+   real border would add 12px to the measured outer box without adding
+   any content-area room for the board itself, overflowing it past the
+   frame on every resize — the same class of bug CM-201 fixed, just via
+   a different cause. box-shadow paints without touching the box model. */
 .board-wrap {
   position: relative;
   margin: 0 auto;
   max-width: 420px;
+  border-radius: var(--r-sm);
+  box-shadow: 0 0 0 6px var(--sq-frame), var(--e-3);
+  line-height: 0;
+  transition: box-shadow var(--dur-fast) var(--ease);
+}
+
+.board-wrap--active-turn {
+  box-shadow: 0 0 0 6px var(--sq-frame), 0 0 0 8px var(--brass-500), var(--e-3);
 }
 
 .check-toast {
@@ -381,42 +535,53 @@ h1 {
   transform: translateX(-50%);
   z-index: 5;
   padding: 4px 14px;
-  border-radius: 14px;
-  background: #c94f4f;
-  color: white;
+  border-radius: var(--r-pill);
+  background: var(--alarm);
+  color: var(--paper-50);
   font-size: 0.8rem;
   font-weight: 600;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  box-shadow: var(--e-2);
 }
 
 .bot-thinking {
-  color: #999;
+  color: var(--paper-500);
   font-size: 0.85rem;
   margin-top: 10px;
 }
 
 .game-status {
-  font-weight: 600;
+  font-family: var(--font-display);
+  font-weight: 650;
+  color: var(--paper-50);
   margin-top: 12px;
 }
 
 .game-rail {
   margin-top: 20px;
   text-align: left;
+  background: var(--felt-900);
+  border: 1px solid var(--line-1);
+  border-radius: var(--r-lg);
+  padding: var(--s-3);
+}
+
+.game-rail--collapsed {
+  padding: var(--s-2);
 }
 
 .rail-toggle {
   padding: 4px 12px;
-  border-radius: 14px;
-  border: 1px solid #ccc;
-  background: white;
-  color: #444;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line-1);
+  background: transparent;
+  color: var(--paper-300);
   font-size: 0.75rem;
   cursor: pointer;
+  transition: background var(--dur-fast) var(--ease);
 }
 
 .rail-toggle:hover {
-  background: #f2f2f2;
+  background: var(--felt-800);
 }
 
 .game-rail-body {
@@ -425,20 +590,21 @@ h1 {
 
 .game-rail-body h3 {
   font-size: 0.85rem;
-  color: #666;
+  color: var(--paper-500);
   margin-bottom: 6px;
 }
 
 .move-list {
   max-height: 160px;
   overflow-y: auto;
-  background: #f0f0ee;
-  border-radius: 8px;
+  background: var(--felt-800);
+  border-radius: var(--r-sm);
   padding: 6px 8px;
+  font-variant-numeric: tabular-nums;
 }
 
 .move-list-empty {
-  color: #999;
+  color: var(--paper-500);
   font-size: 0.85rem;
 }
 
@@ -451,51 +617,71 @@ h1 {
 }
 
 .move-list-number {
-  color: #999;
+  color: var(--paper-500);
   width: 24px;
   flex-shrink: 0;
   font-variant-numeric: tabular-nums;
 }
 
 .move-list-ply {
-  border: none;
+  border: 2px solid transparent;
   background: transparent;
+  color: var(--paper-100);
   padding: 2px 6px;
-  border-radius: 4px;
+  border-radius: var(--r-sm);
   font-size: 0.85rem;
   cursor: pointer;
   font-family: inherit;
 }
 
 .move-list-ply:hover {
-  background: #e4e4e0;
+  background: var(--felt-700);
 }
 
 .move-list-ply--current {
-  background: #1a1a1a;
-  color: white;
+  background: var(--felt-700);
+  border-color: var(--brass-500);
+  color: var(--paper-50);
+  font-weight: 600;
 }
 
 .back-to-live-button {
   display: block;
   margin-top: 8px;
   padding: 4px 12px;
-  border-radius: 14px;
-  border: 1px solid #3a7d44;
-  background: #eaf3ec;
-  color: #3a7d44;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--brass-500);
+  background: transparent;
+  color: var(--brass-300);
   font-size: 0.8rem;
   cursor: pointer;
+  transition: background var(--dur-fast) var(--ease);
+}
+
+.back-to-live-button:hover {
+  background: var(--felt-800);
 }
 
 .copy-pgn-button {
   display: block;
   margin-top: 8px;
+  padding: 4px 12px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line-1);
+  background: transparent;
+  color: var(--paper-300);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease);
+}
+
+.copy-pgn-button:hover {
+  background: var(--felt-800);
 }
 
 .pgn-box {
-  background: #f0f0ee;
-  border-radius: 8px;
+  background: var(--felt-800);
+  border-radius: var(--r-sm);
   padding: 10px;
   font-size: 0.8rem;
   max-height: 120px;
@@ -507,6 +693,14 @@ h1 {
   margin-top: 20px;
 }
 
+.post-game h2 {
+  font-family: var(--font-display);
+  font-weight: 650;
+  font-size: var(--t-h2);
+  color: var(--paper-50);
+  margin: 0 0 16px;
+}
+
 .council-panel {
   margin-top: 20px;
   text-align: left;
@@ -514,7 +708,7 @@ h1 {
 
 .council-panel h3 {
   font-size: 0.85rem;
-  color: #666;
+  color: var(--paper-500);
   margin-bottom: 6px;
 }
 
@@ -523,21 +717,24 @@ h1 {
   align-items: flex-start;
   gap: 8px;
   padding: 8px 12px;
-  border-radius: 10px;
+  border-radius: var(--r-md);
   margin: 0 0 8px;
-  border: 1px solid;
+  border: 1px solid var(--line-2);
 }
 
+/* The one place the no-pure-black rule breaks, on purpose: white-move
+   comments get a light bg/dark text, black-move comments get a dark
+   bg/light text. The border is load-bearing — without it the light
+   bubble disappears against a light surface and the dark bubble
+   disappears against the felt. */
 .commentary-bubble--white {
-  background: #f5f3ee;
-  color: #1a1a1a;
-  border-color: rgba(0, 0, 0, 0.15);
+  background: var(--paper-100);
+  color: var(--felt-950);
 }
 
 .commentary-bubble--black {
-  background: #1a1a1a;
-  color: #f5f3ee;
-  border-color: rgba(255, 255, 255, 0.15);
+  background: var(--felt-950);
+  color: var(--paper-100);
 }
 
 .commentary-bubble__avatar {
@@ -547,11 +744,11 @@ h1 {
 
 .commentary-bubble__speaker {
   display: block;
-  font-size: 0.7rem;
+  font-size: var(--t-micro);
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
-  opacity: 0.65;
+  letter-spacing: 0.16em;
+  opacity: 0.62;
   margin-bottom: 2px;
 }
 
@@ -561,12 +758,13 @@ h1 {
 }
 
 .council-recap {
-  background: #eef0e6;
-  border-radius: 8px;
+  background: var(--felt-800);
+  border-radius: var(--r-sm);
   padding: 10px;
   font-size: 0.85rem;
   line-height: 1.4;
   margin-top: 8px;
+  color: var(--paper-100);
 }
 
 .council-report {
@@ -576,13 +774,13 @@ h1 {
 
 .council-report h3 {
   font-size: 0.85rem;
-  color: #666;
+  color: var(--paper-500);
   margin-bottom: 6px;
 }
 
 .council-report-loading {
   font-size: 0.85rem;
-  color: #999;
+  color: var(--paper-500);
   font-style: italic;
 }
 
@@ -595,11 +793,14 @@ h1 {
   gap: 6px;
 }
 
+/* Neutral/base treatment also covers the "normal" classification (tag
+   label "Notable") — there's no separate override for it below, same
+   as before this pass. */
 .defining-move {
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   padding: 8px 10px;
-  background: #f0f0ee;
-  border-left: 3px solid #ccc;
+  background: var(--felt-900);
+  border-left: 3px solid var(--line-2);
 }
 
 .defining-move-head {
@@ -614,57 +815,62 @@ h1 {
   text-transform: uppercase;
   letter-spacing: 0.04em;
   padding: 2px 8px;
-  border-radius: 10px;
-  background: #ddd;
-  color: #555;
+  border-radius: var(--r-pill);
+  background: var(--felt-700);
+  color: var(--paper-300);
 }
 
 .defining-move-san {
   font-size: 0.85rem;
   font-weight: 600;
+  color: var(--paper-50);
 }
 
 .defining-move-caption {
   font-size: 0.8rem;
-  color: #555;
+  color: var(--paper-300);
   margin: 4px 0 0;
   line-height: 1.4;
 }
 
 .defining-move-blunder {
-  background: #fbeeee;
-  border-left-color: #c94f4f;
+  background: var(--felt-900);
+  border-left-color: var(--loss);
 }
 .defining-move-blunder .defining-move-tag {
-  background: #c94f4f;
-  color: white;
+  background: var(--loss);
+  color: var(--paper-50);
 }
 
 .defining-move-mistake {
-  background: #fbf3ea;
-  border-left-color: #c98a4f;
+  background: var(--felt-900);
+  border-left-color: var(--warn);
 }
 .defining-move-mistake .defining-move-tag {
-  background: #c98a4f;
-  color: white;
+  background: var(--warn);
+  color: var(--brass-ink);
 }
 
+/* No exact kit precedent for "inaccuracy" (the kit's own 3-tier
+   move-quality scale only has blunder/mistake/good) — placed one notch
+   below "mistake": same warn hue, lower-emphasis neutral tag instead of
+   a filled one. */
 .defining-move-inaccuracy {
-  background: #fbf8ea;
-  border-left-color: #c9b64f;
+  background: var(--felt-900);
+  border-left-color: var(--warn);
 }
 .defining-move-inaccuracy .defining-move-tag {
-  background: #c9b64f;
-  color: white;
+  background: var(--felt-700);
+  color: var(--warn);
 }
 
 .defining-move-excellent {
-  background: #eef5ef;
-  border-left-color: #2d6a4f;
+  background: var(--felt-900);
+  border-left-color: var(--win);
 }
 .defining-move-excellent .defining-move-tag {
-  background: #2d6a4f;
-  color: white;
+  background: var(--win);
+  color: var(--felt-950);
 }
 
 .council-personas {
@@ -674,20 +880,23 @@ h1 {
 }
 
 .council-persona {
-  background: #f3ede0;
-  border-radius: 8px;
+  background: var(--felt-900);
+  border: 1px solid var(--line-1);
+  border-radius: var(--r-sm);
   padding: 10px 12px;
 }
 
 .council-persona h4 {
   margin: 0 0 4px;
-  font-size: 0.8rem;
-  color: #333;
+  font-family: var(--font-display);
+  font-weight: 650;
+  font-size: 0.85rem;
+  color: var(--brass-300);
 }
 
 .council-persona p {
   margin: 0;
   font-size: 0.82rem;
   line-height: 1.45;
-  color: #333;
+  color: var(--paper-100);
 }

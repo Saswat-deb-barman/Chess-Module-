@@ -27,12 +27,7 @@ export function useBoardWidth() {
     if (!node) return;
 
     function measure(width) {
-      setBoardWidth((prev) => {
-        if (Math.abs(prev - width) < MIN_WIDTH_DELTA) return prev;
-        const next = Math.round(width);
-        console.log("[useBoardWidth] container:", width, "-> boardWidth:", next);
-        return next;
-      });
+      setBoardWidth((prev) => (Math.abs(prev - width) < MIN_WIDTH_DELTA ? prev : Math.round(width)));
     }
 
     measure(node.getBoundingClientRect().width);
