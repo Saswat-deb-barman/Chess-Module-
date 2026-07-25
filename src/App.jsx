@@ -5,11 +5,14 @@ import FriendLobby from "./components/FriendLobby.jsx";
 import MultiplayerBoard from "./components/MultiplayerBoard.jsx";
 import SignInButton from "./components/SignInButton.jsx";
 import GameHistory from "./components/GameHistory.jsx";
+import AnalysisModeChooser from "./components/AnalysisModeChooser.jsx";
 import { useAuth } from "./lib/auth.jsx";
+import { useAnalysisMode } from "./lib/analysisMode.jsx";
 import { saveGame, updateGameRecap, updateGameCouncilReport } from "./lib/games.js";
 
 export default function App() {
   const { user, idToken, signOut, enabled } = useAuth();
+  const { mode, loading: modeLoading } = useAnalysisMode();
   // A shared room link (?room=CODE) should land straight in the friend
   // flow — FriendLobby's own effect that reads this param never gets a
   // chance to run if this component isn't mounted in the first place.
@@ -88,6 +91,13 @@ export default function App() {
   // has: guest-only, no gate, since there's nothing to sign in *to*.
   const canPlay = !enabled || user;
 
+  // The onboarding mode chooser only applies when real auth is
+  // configured and someone is actually signed in — guest-only local
+  // dev (auth disabled entirely) skips it and falls back to whatever
+  // default the eventual beginner-mode consumer applies (mode ?? "beginner").
+  const modeGateLoading = enabled && user && modeLoading;
+  const showModeChooser = enabled && user && !modeLoading && mode === null;
+
   return (
     <main className="app">
       <SignInButton />
@@ -95,6 +105,8 @@ export default function App() {
 
       {!canPlay ? (
         <p className="landing-message">Sign in with Google to play.</p>
+      ) : modeGateLoading ? null : showModeChooser ? (
+        <AnalysisModeChooser />
       ) : (
         <>
           <div className="top-mode-toggle">

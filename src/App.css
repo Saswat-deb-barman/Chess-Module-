@@ -26,6 +26,30 @@ body {
   font-size: 0.95rem;
 }
 
+.analysis-mode-chooser {
+  margin-top: 24px;
+}
+
+.analysis-mode-chooser h2 {
+  font-family: var(--font-display);
+  font-weight: 650;
+  font-size: var(--t-h2);
+  color: var(--paper-50);
+  margin: 0 0 8px;
+}
+
+.analysis-mode-chooser-sub {
+  color: var(--paper-300);
+  font-size: 0.9rem;
+  margin: 0 0 20px;
+}
+
+.analysis-mode-chooser-options {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
 h1 {
   font-family: var(--font-display);
   font-weight: 650;
