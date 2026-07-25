@@ -16,6 +16,8 @@ import {
 } from "./db.js";
 import { requireAuth, verifyGoogleToken } from "./auth.js";
 import { registerSocketHandlers } from "./socket.js";
+import { detectPatterns } from "./patternTaxonomy.js";
+import { computeMyStats } from "./stats.js";
 
 const allowedOrigins = (
   process.env.CLIENT_ORIGIN || "http://localhost:5173,https://chess-module.vercel.app"
@@ -71,7 +73,20 @@ app.post("/games", requireAuth, async (req, res) => {
 
 app.get("/games", requireAuth, async (req, res) => {
   const games = await listGames(req.identity.sub);
-  res.json({ games });
+  // Attached on read, not baked into the cached council_report — so a
+  // taxonomy improvement in patternTaxonomy.js applies retroactively to
+  // every historical game without regenerating anything.
+  const withPatterns = games.map((g) => ({ ...g, patterns: detectPatterns(g, req.identity.sub) }));
+  res.json({ games: withPatterns });
+});
+
+// Wave 1: pure aggregate over already-classified game rows — no new
+// schema, no model calls. See server/stats.js for the ranking/trend
+// logic and server/patternTaxonomy.js for what a "pattern" is.
+app.get("/me/stats", requireAuth, async (req, res) => {
+  const games = await listGames(req.identity.sub);
+  const stats = computeMyStats(games, req.identity.sub);
+  res.json(stats);
 });
 
 app.patch("/games/:id", requireAuth, async (req, res) => {
