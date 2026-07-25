@@ -1,3 +1,5 @@
+import CommentaryBubble from "./CommentaryBubble.jsx";
+
 export default function CouncilPanel({ messages, recap }) {
   if (messages.length === 0 && !recap) return null;
 
@@ -5,7 +7,7 @@ export default function CouncilPanel({ messages, recap }) {
     <div className="council-panel">
       <h3>The Council</h3>
       {messages.map((message, i) => (
-        <p key={i} className="council-ping">{message}</p>
+        <CommentaryBubble key={i} side={message.side} text={message.text} />
       ))}
       {recap && <p className="council-recap">{recap}</p>}
     </div>

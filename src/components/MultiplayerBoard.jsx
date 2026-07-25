@@ -1,9 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 import { Chessboard } from "react-chessboard";
-import { createGame, tryMove, toFen } from "../lib/gameLogic.js";
+import { createGame, tryMove, toFen, toPgn, isMyTurn, getPositionAtPly } from "../lib/gameLogic.js";
 import { socket } from "../lib/multiplayerSocket.js";
 import { Engine } from "../engine/stockfishWorker.js";
 import { analyzeGame } from "../lib/gameAnalysis.js";
+import { useBoardWidth } from "../hooks/useBoardWidth.js";
+import { useLegalTargets } from "../hooks/useLegalTargets.js";
+import { useDocumentTitle } from "../hooks/useDocumentTitle.js";
+import { useCheckAlert } from "../hooks/useCheckAlert.js";
+import { buildMoveHighlightStyles } from "./MoveHighlightLayer.jsx";
+import TurnIndicator from "./TurnIndicator.jsx";
+import CheckToast from "./CheckToast.jsx";
+import GameRail from "./GameRail.jsx";
 import CouncilPanel from "./CouncilPanel.jsx";
 import CouncilReport from "./CouncilReport.jsx";
 
@@ -38,11 +46,19 @@ export default function MultiplayerBoard({ myColor }) {
   const unmountedRef = useRef(false);
   const [fen, setFen] = useState(toFen(gameRef.current));
   const [status, setStatus] = useState(null);
+  const [boardContainerRef, boardWidth] = useBoardWidth();
+  const [flipped, setFlipped] = useState(false); // CM-201 test scaffolding: no flip control existed before
+  const [selectedSquare, setSelectedSquare] = useState(null);
+  const [previewPly, setPreviewPly] = useState(null); // null = live; a ply index = read-only preview
+  const legalTargets = useLegalTargets(gameRef.current, selectedSquare, fen);
+  const checkAlert = useCheckAlert(gameRef.current, fen);
   const [councilMessages, setCouncilMessages] = useState([]);
   const [recap, setRecap] = useState(null);
   const [definingMoves, setDefiningMoves] = useState([]);
   const [councilReport, setCouncilReport] = useState(null);
   const [councilAnalyzing, setCouncilAnalyzing] = useState(false);
+
+  useDocumentTitle(isMyTurn(gameRef.current, myColor, status));
 
   useEffect(() => {
     // Reset (not reinitialize) — React StrictMode's dev-mode double-
@@ -84,8 +100,8 @@ export default function MultiplayerBoard({ myColor }) {
     function handleOpponentDisconnected() {
       setStatus((current) => current ?? "Your opponent disconnected.");
     }
-    function handleCouncilPing({ message }) {
-      setCouncilMessages((prev) => [...prev, message]);
+    function handleCouncilPing({ message, side }) {
+      setCouncilMessages((prev) => [...prev, { side, text: message }]);
     }
     function handleCouncilRecap({ message }) {
       setRecap(message);
@@ -116,16 +132,53 @@ export default function MultiplayerBoard({ myColor }) {
     };
   }, []);
 
-  function onPieceDrop(sourceSquare, targetSquare) {
-    const game = gameRef.current;
-    if (status || game.turn() !== myColor) return false;
+  // Selection can survive past a game-ending event that doesn't route
+  // through applyMove (opponent disconnect, server-declared game over) —
+  // clear it so a stale highlight can't linger once the game is over.
+  useEffect(() => {
+    if (status) setSelectedSquare(null);
+  }, [status]);
 
+  // Single move-application choke point — both onPieceDrop (drag) and
+  // onSquareClick (click) call this, so the two paths can never diverge
+  // (CM-203: "click-move and drag-move produce identical move objects").
+  function applyMove(sourceSquare, targetSquare) {
+    const game = gameRef.current;
     const move = tryMove(game, sourceSquare, targetSquare);
-    if (!move) return false; // triggers react-chessboard's snapback
+    if (!move) return null;
 
     setFen(toFen(game));
     socket.emit("move", { from: sourceSquare, to: targetSquare, promotion: "q" });
+    return move;
+  }
+
+  function onPieceDrop(sourceSquare, targetSquare) {
+    if (status || gameRef.current.turn() !== myColor) return false;
+    const move = applyMove(sourceSquare, targetSquare);
+    if (!move) return false; // triggers react-chessboard's snapback
+    setSelectedSquare(null);
     return true;
+  }
+
+  function onSquareClick(square, piece) {
+    if (!isMyTurn(gameRef.current, myColor, status)) return;
+
+    if (selectedSquare === square) {
+      setSelectedSquare(null);
+      return;
+    }
+
+    if (selectedSquare) {
+      const isLegalTarget = legalTargets.some((move) => move.to === square);
+      if (isLegalTarget) {
+        applyMove(selectedSquare, square);
+        setSelectedSquare(null);
+        return;
+      }
+    }
+
+    const isOwnPiece = piece && piece[0] === myColor;
+    setSelectedSquare(isOwnPiece ? square : null);
   }
 
   // The server is authoritative for the actual result (same reasoning as
@@ -135,22 +188,59 @@ export default function MultiplayerBoard({ myColor }) {
     socket.emit("resign");
   }
 
+  const baseOrientation = myColor === "w" ? "white" : "black";
+  const boardOrientation = flipped
+    ? (baseOrientation === "white" ? "black" : "white")
+    : baseOrientation;
+
+  const activeColor = gameRef.current.turn();
+  const isPreviewing = previewPly !== null;
+  const displayFen = isPreviewing ? getPositionAtPly(gameRef.current, previewPly) : fen;
+
   return (
     <div className="board-screen">
-      <div className="board-wrap">
-        <Chessboard
-          position={fen}
-          onPieceDrop={onPieceDrop}
-          boardOrientation={myColor === "w" ? "white" : "black"}
-          arePiecesDraggable={!status}
-        />
+      {!status && (
+        <TurnIndicator activeColor={activeColor} myColor={myColor} opponentLabel="opponent" />
+      )}
+      <div
+        className={`board-wrap ${activeColor === myColor && !status ? "board-wrap--active-turn" : ""}`}
+        ref={boardContainerRef}
+      >
+        {boardWidth > 0 && (
+          <Chessboard
+            key={boardWidth}
+            boardWidth={boardWidth}
+            position={displayFen}
+            onPieceDrop={isPreviewing ? () => false : onPieceDrop}
+            onSquareClick={isPreviewing ? () => {} : onSquareClick}
+            customSquareStyles={
+              isPreviewing ? {} : buildMoveHighlightStyles(selectedSquare, legalTargets, checkAlert.checkedKingSquare)
+            }
+            boardOrientation={boardOrientation}
+            arePiecesDraggable={!status && !isPreviewing}
+          />
+        )}
+        {!isPreviewing && checkAlert.checkedColor === myColor && !checkAlert.isCheckmate && (
+          <CheckToast key={fen} />
+        )}
       </div>
       {!status && (
         <button className="resign-button" onClick={handleResign}>
           Resign
         </button>
       )}
+      <button className="flip-button" onClick={() => setFlipped((f) => !f)}>
+        Flip board
+      </button>
       {status && <p className="game-status">{status}</p>}
+      <GameRail
+        game={gameRef.current}
+        fen={fen}
+        pgn={toPgn(gameRef.current)}
+        previewPly={previewPly}
+        onSelectPly={setPreviewPly}
+        onBackToLive={() => setPreviewPly(null)}
+      />
       <CouncilPanel messages={councilMessages} recap={recap} />
       {status && (
         <CouncilReport definingMoves={definingMoves} report={councilReport} loading={councilAnalyzing} />

@@ -1,4 +1,4 @@
-# chess-mvp — working conventions
+# Chess by Alchemist (chess-mvp repo) — working conventions
 
 Read `HANDOFF.md` for full project history and current status. This file
 is the short, load-bearing convention every session (human or Claude)
