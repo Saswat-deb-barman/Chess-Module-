@@ -9,6 +9,7 @@ import { useLegalTargets } from "../hooks/useLegalTargets.js";
 import { useDocumentTitle } from "../hooks/useDocumentTitle.js";
 import { useCheckAlert } from "../hooks/useCheckAlert.js";
 import { buildMoveHighlightStyles } from "./MoveHighlightLayer.jsx";
+import { buildPieceSet } from "./chess/pieceSet.jsx";
 import TurnIndicator from "./TurnIndicator.jsx";
 import CheckToast from "./CheckToast.jsx";
 import GameRail from "./GameRail.jsx";
@@ -40,6 +41,8 @@ import CouncilReport from "./CouncilReport.jsx";
  * socket.js's "submitDefiningMoves" handler); the result is then
  * broadcast to both clients either way.
  */
+const PIECE_SET = buildPieceSet();
+
 export default function MultiplayerBoard({ myColor }) {
   const gameRef = useRef(createGame({ white: "Player 1", black: "Player 2" }));
   const engineRef = useRef(null);
@@ -216,6 +219,9 @@ export default function MultiplayerBoard({ myColor }) {
             customSquareStyles={
               isPreviewing ? {} : buildMoveHighlightStyles(selectedSquare, legalTargets, checkAlert.checkedKingSquare)
             }
+            customPieces={PIECE_SET}
+            customDarkSquareStyle={{ backgroundColor: "var(--sq-dark)" }}
+            customLightSquareStyle={{ backgroundColor: "var(--sq-light)" }}
             boardOrientation={boardOrientation}
             arePiecesDraggable={!status && !isPreviewing}
           />

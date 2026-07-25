@@ -18,6 +18,7 @@ import { useLegalTargets } from "../hooks/useLegalTargets.js";
 import { useDocumentTitle } from "../hooks/useDocumentTitle.js";
 import { useCheckAlert } from "../hooks/useCheckAlert.js";
 import { buildMoveHighlightStyles } from "./MoveHighlightLayer.jsx";
+import { buildPieceSet } from "./chess/pieceSet.jsx";
 import Clock, { INITIAL_TIMES } from "./Clock.jsx";
 import TurnIndicator from "./TurnIndicator.jsx";
 import CheckToast from "./CheckToast.jsx";
@@ -28,6 +29,8 @@ import CouncilReport from "./CouncilReport.jsx";
 // Human always plays White in Phase 1 — a color picker is a cheap add
 // later but isn't needed to validate the core loop.
 const HUMAN_COLOR = "w";
+
+const PIECE_SET = buildPieceSet();
 
 function capitalize(word) {
   return word.charAt(0).toUpperCase() + word.slice(1);
@@ -279,6 +282,9 @@ export default function Board({ difficulty, onGameEnd, onRecap, onCouncilReport 
             customSquareStyles={
               isPreviewing ? {} : buildMoveHighlightStyles(selectedSquare, legalTargets, checkAlert.checkedKingSquare)
             }
+            customPieces={PIECE_SET}
+            customDarkSquareStyle={{ backgroundColor: "var(--sq-dark)" }}
+            customLightSquareStyle={{ backgroundColor: "var(--sq-light)" }}
             boardOrientation={boardOrientation}
             arePiecesDraggable={!status && !isPreviewing}
           />

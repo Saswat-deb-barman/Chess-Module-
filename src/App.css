@@ -392,15 +392,25 @@ h1 {
   font-weight: 600;
 }
 
-.board-wrap--active-turn {
-  box-shadow: 0 0 0 2px #3a7d44;
-  border-radius: 4px;
-}
-
+/* Frame bezel is a box-shadow, not a border: useBoardWidth's
+   ResizeObserver measures THIS element's getBoundingClientRect(), and
+   the Chessboard is then rendered at exactly that measured width. A
+   real border would add 12px to the measured outer box without adding
+   any content-area room for the board itself, overflowing it past the
+   frame on every resize — the same class of bug CM-201 fixed, just via
+   a different cause. box-shadow paints without touching the box model. */
 .board-wrap {
   position: relative;
   margin: 0 auto;
   max-width: 420px;
+  border-radius: var(--r-sm);
+  box-shadow: 0 0 0 6px var(--sq-frame), var(--e-3);
+  line-height: 0;
+  transition: box-shadow var(--dur-fast) var(--ease);
+}
+
+.board-wrap--active-turn {
+  box-shadow: 0 0 0 6px var(--sq-frame), 0 0 0 8px var(--brass-500), var(--e-3);
 }
 
 .check-toast {
