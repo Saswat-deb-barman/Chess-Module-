@@ -322,32 +322,34 @@ h1 {
 .resign-button {
   margin-top: 10px;
   padding: 6px 18px;
-  border-radius: 18px;
-  border: 1px solid #c94f4f;
-  background: white;
-  color: #c94f4f;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--loss);
+  background: transparent;
+  color: var(--loss);
   font-size: 0.8rem;
   cursor: pointer;
+  transition: background var(--dur-fast) var(--ease);
 }
 
 .resign-button:hover {
-  background: #fdf1f1;
+  background: var(--felt-800);
 }
 
 .flip-button {
   margin-top: 10px;
   margin-left: 10px;
   padding: 6px 18px;
-  border-radius: 18px;
-  border: 1px solid #999;
-  background: white;
-  color: #444;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line-1);
+  background: transparent;
+  color: var(--paper-300);
   font-size: 0.8rem;
   cursor: pointer;
+  transition: background var(--dur-fast) var(--ease);
 }
 
 .flip-button:hover {
-  background: #f2f2f2;
+  background: var(--felt-800);
 }
 
 .clock-pair {
@@ -361,14 +363,40 @@ h1 {
 
 .clock {
   padding: 4px 10px;
-  border-radius: 8px;
-  background: #eee;
-  color: #888;
+  border-radius: var(--r-sm);
+  background: var(--felt-900);
+  color: var(--paper-500);
+  font-family: var(--font-display);
 }
 
 .clock-active {
-  background: #1a1a1a;
-  color: white;
+  background: var(--felt-800);
+  color: var(--paper-50);
+}
+
+.clock-warn {
+  color: var(--warn);
+}
+
+.clock-alarm {
+  color: var(--alarm);
+  animation: clock-tick-pulse 1s ease-in-out infinite;
+}
+
+@keyframes clock-tick-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .clock-alarm {
+    animation: none;
+  }
 }
 
 .turn-indicator-pair {
@@ -380,16 +408,56 @@ h1 {
 }
 
 .turn-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   padding: 3px 10px;
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   background: transparent;
-  color: #888;
+  color: var(--paper-500);
 }
 
 .turn-indicator--active {
-  background: #eaf3ec;
-  color: #3a7d44;
+  background: var(--felt-800);
+  color: var(--paper-50);
   font-weight: 600;
+}
+
+.turn-lamp {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--felt-700);
+  color: var(--brass-300);
+  font-family: var(--font-display);
+  font-weight: 650;
+  font-size: 10px;
+}
+
+.turn-lamp--on {
+  box-shadow: var(--e-lamp);
+  animation: turn-lamp-breathe 2.4s ease-in-out infinite;
+}
+
+@keyframes turn-lamp-breathe {
+  0%,
+  100% {
+    box-shadow: 0 0 0 2px var(--brass-500), 0 0 18px rgba(212, 169, 75, 0.26);
+  }
+  50% {
+    box-shadow: 0 0 0 2px var(--brass-500), 0 0 34px rgba(212, 169, 75, 0.5);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .turn-lamp--on {
+    animation: none;
+    box-shadow: var(--e-lamp);
+  }
 }
 
 /* Frame bezel is a box-shadow, not a border: useBoardWidth's
@@ -420,22 +488,24 @@ h1 {
   transform: translateX(-50%);
   z-index: 5;
   padding: 4px 14px;
-  border-radius: 14px;
-  background: #c94f4f;
-  color: white;
+  border-radius: var(--r-pill);
+  background: var(--alarm);
+  color: var(--paper-50);
   font-size: 0.8rem;
   font-weight: 600;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  box-shadow: var(--e-2);
 }
 
 .bot-thinking {
-  color: #999;
+  color: var(--paper-500);
   font-size: 0.85rem;
   margin-top: 10px;
 }
 
 .game-status {
-  font-weight: 600;
+  font-family: var(--font-display);
+  font-weight: 650;
+  color: var(--paper-50);
   margin-top: 12px;
 }
 
@@ -544,6 +614,14 @@ h1 {
 
 .post-game {
   margin-top: 20px;
+}
+
+.post-game h2 {
+  font-family: var(--font-display);
+  font-weight: 650;
+  font-size: var(--t-h2);
+  color: var(--paper-50);
+  margin: 0 0 16px;
 }
 
 .council-panel {

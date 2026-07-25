@@ -9,6 +9,14 @@ function format(seconds) {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
+// Purely a class-name derivation from the already-ticking seconds value —
+// no change to the timing/interval mechanics below.
+function timeState(seconds) {
+  if (seconds < 10) return "clock-alarm";
+  if (seconds < 30) return "clock-warn";
+  return "";
+}
+
 /**
  * Two independent countdowns, only one ticking at a time based on
  * `activeColor`. Calls onFlagFall(color) exactly once when a side hits 0.
@@ -43,10 +51,10 @@ export default function Clock({ activeColor, running, onFlagFall, timesRef }) {
 
   return (
     <div className="clock-pair">
-      <span className={`clock ${activeColor === "b" ? "clock-active" : ""}`}>
+      <span className={`clock ${activeColor === "b" ? "clock-active" : ""} ${timeState(timesRef.current.b)}`}>
         Black {format(timesRef.current.b)}
       </span>
-      <span className={`clock ${activeColor === "w" ? "clock-active" : ""}`}>
+      <span className={`clock ${activeColor === "w" ? "clock-active" : ""} ${timeState(timesRef.current.w)}`}>
         White {format(timesRef.current.w)}
       </span>
     </div>
