@@ -11,8 +11,10 @@ const PERSONAS = [
 ];
 
 // "The moment it turned": the game's clearest blunder if one exists,
-// otherwise its single largest eval swing in either direction.
-function pickCriticalMove(definingMoves) {
+// otherwise its single largest eval swing in either direction. Exported
+// for reuse by the dashboard's improvement-strip drill (opens the same
+// "critical moment" on a past game, not a fresh notion of one).
+export function pickCriticalMove(definingMoves) {
   if (!definingMoves.length) return null;
   return (
     definingMoves.find((m) => m.classification === "blunder") ??

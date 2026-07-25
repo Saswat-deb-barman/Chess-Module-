@@ -1,19 +1,81 @@
+import { useEffect, useState } from "react";
+import { useAuth } from "../lib/auth.jsx";
+import { fetchMyStats } from "../lib/stats.js";
+import { listGames } from "../lib/games.js";
+import TrajectoryHeader from "./dashboard/TrajectoryHeader.jsx";
+import ImprovementStrip from "./dashboard/ImprovementStrip.jsx";
+import { pickCriticalMove } from "./CouncilReportBento.jsx";
+import ReplayBoard from "./chess/ReplayBoard.jsx";
 import GameHistory from "./GameHistory.jsx";
 
 /**
  * The signed-in landing screen (phase: "home") — DASHBOARD_SPEC_V1's
  * new home, replacing the setup screen as the front door for anyone
- * already signed in. Wave 1 scope for this file: the navigation
- * skeleton, plus keeping Match History reachable here (it used to live
- * below the setup screen, which is no longer the first thing a signed-
- * in user sees). Trajectory header, improvement strip, the
- * context-aware primary CTA, and worth-reviewing all land here in
- * later phases of this same cycle — each zone renders independently
- * once it exists, per the spec's "progressive, never blocking" rule.
+ * already signed in. Each zone below owns its own fetch and its own
+ * loading/empty state (W1-14's "progressive, never blocking" rule) —
+ * a slow or failed trajectory fetch must never blank the CTA or Match
+ * History underneath it.
  */
 export default function Dashboard({ onPlayBot, onPlayFriend, historyRefreshKey }) {
+  const { user, idToken, signOut } = useAuth();
+  const [stats, setStats] = useState(null);
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [games, setGames] = useState([]);
+  const [drill, setDrill] = useState(null); // { game, pattern } | null
+
+  useEffect(() => {
+    if (!user || !idToken) {
+      setStats(null);
+      setStatsLoading(false);
+      return;
+    }
+    setStatsLoading(true);
+    fetchMyStats(idToken, { onUnauthorized: signOut }).then((data) => {
+      setStats(data);
+      setStatsLoading(false);
+    });
+  }, [user, idToken, signOut, historyRefreshKey]);
+
+  // A separate fetch from GameHistory's own — this one exists purely to
+  // resolve the improvement strip's drill button to a real game, so it
+  // can't be blocked by (or block) the match-history list below.
+  useEffect(() => {
+    if (!user || !idToken) {
+      setGames([]);
+      return;
+    }
+    listGames(idToken, { onUnauthorized: signOut }).then(setGames);
+  }, [user, idToken, signOut, historyRefreshKey]);
+
+  function handleDrill(pattern) {
+    const match = games.find((g) => g.patterns?.includes(pattern.id));
+    if (match) setDrill({ game: match, pattern });
+  }
+
+  const drillCriticalMove = drill
+    ? pickCriticalMove(drill.game.council_report?.definingMoves ?? [])
+    : null;
+
   return (
     <div className="dashboard">
+      <TrajectoryHeader stats={stats} loading={statsLoading} />
+      <ImprovementStrip patterns={stats?.patterns ?? []} loading={statsLoading} onDrill={handleDrill} />
+
+      {drill && (
+        <div className="dashboard-drill">
+          <div className="dashboard-drill-head">
+            <p className="dashboard-drill-title">Reviewing: {drill.pattern.label}</p>
+            <button className="dashboard-drill-close" onClick={() => setDrill(null)}>
+              Close
+            </button>
+          </div>
+          <ReplayBoard
+            pgn={drill.game.pgn}
+            initialPly={drillCriticalMove ? drillCriticalMove.ply - 1 : undefined}
+          />
+        </div>
+      )}
+
       <div className="cta-row">
         <button className="start-button" onClick={onPlayBot}>
           Play the bot
