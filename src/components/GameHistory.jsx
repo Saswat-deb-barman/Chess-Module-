@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../lib/auth.jsx";
 import { listGames, askAboutGame } from "../lib/games.js";
 import CouncilReport from "./CouncilReport.jsx";
+import ReplayBoard from "./chess/ReplayBoard.jsx";
 
 function GameChat({ gameId }) {
   const { idToken, signOut } = useAuth();
@@ -72,6 +73,7 @@ function GameRow({ game, viewerSub }) {
           ) : (
             <p className="game-history-recap game-history-recap-empty">No analysis available for this game.</p>
           )}
+          <ReplayBoard pgn={game.pgn} />
           <pre className="pgn-box">{game.pgn}</pre>
           {game.council_report && (
             <CouncilReport

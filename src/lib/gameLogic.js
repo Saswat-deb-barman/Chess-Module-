@@ -141,3 +141,13 @@ export function getPositionAtPlyFromPgn(pgn, plyIndex) {
   game.loadPgn(pgn);
   return getPositionAtPly(game, plyIndex);
 }
+
+/**
+ * Total ply count for a static PGN — a replay scrubber's range, since
+ * there's no live game/GameRail to read a move count from.
+ */
+export function getPlyCountFromPgn(pgn) {
+  const game = new Chess();
+  game.loadPgn(pgn);
+  return game.history().length;
+}

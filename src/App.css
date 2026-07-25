@@ -528,6 +528,28 @@ h1 {
   box-shadow: 0 0 0 6px var(--sq-frame), 0 0 0 8px var(--brass-500), var(--e-3);
 }
 
+/* Decorative boards (match-history replay today, a future login front
+   door) are ambient, not interactive — the only motion is whatever
+   drives the ply forward, and reduced-motion should freeze that, not
+   just this wrapper's own (already-cheap) box-shadow transition. */
+@media (prefers-reduced-motion: reduce) {
+  .board-wrap--decorative {
+    transition: none;
+  }
+}
+
+.replay-board {
+  max-width: 420px;
+  margin: 0 auto;
+}
+
+.replay-board-scrubber {
+  display: block;
+  width: 100%;
+  margin-top: 10px;
+  accent-color: var(--brass-500);
+}
+
 .check-toast {
   position: absolute;
   top: 8px;
