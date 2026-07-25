@@ -830,6 +830,60 @@ h1 {
   font-style: italic;
 }
 
+/* ===== Beginner-mode bento (Wave 1 top band + coaches + pattern-hit) ===== */
+.council-bento {
+  margin-top: 20px;
+  text-align: left;
+}
+
+.council-bento h3 {
+  font-size: 0.85rem;
+  color: var(--paper-500);
+  margin-bottom: 6px;
+}
+
+.council-bento-hero {
+  margin: 12px 0;
+}
+
+.council-bento-hero-cap,
+.council-bento-cap {
+  font-size: var(--t-micro);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--brass-500);
+  font-weight: 600;
+  margin: 0 0 8px;
+}
+
+.council-bento-hero-caption {
+  font-family: var(--font-display);
+  font-weight: 600;
+  color: var(--paper-50);
+  margin-top: 8px;
+  text-align: center;
+}
+
+.council-bento-tile {
+  background: var(--felt-900);
+  border: 1px solid var(--line-1);
+  border-radius: var(--r-sm);
+  padding: 12px 14px;
+  margin-bottom: 12px;
+}
+
+.council-bento-tile p {
+  margin: 0;
+  color: var(--paper-100);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.council-bento-pattern {
+  background: linear-gradient(135deg, var(--felt-800), var(--felt-900));
+  border-color: var(--brass-700);
+}
+
 .defining-moves {
   list-style: none;
   margin: 0 0 16px;

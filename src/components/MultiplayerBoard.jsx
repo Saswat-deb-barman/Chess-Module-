@@ -15,6 +15,8 @@ import CheckToast from "./CheckToast.jsx";
 import GameRail from "./GameRail.jsx";
 import CouncilPanel from "./CouncilPanel.jsx";
 import CouncilReport from "./CouncilReport.jsx";
+import CouncilReportBento from "./CouncilReportBento.jsx";
+import { useAnalysisMode } from "../lib/analysisMode.jsx";
 
 /**
  * Keeps its own local chess.js instance so onPieceDrop can keep returning
@@ -44,6 +46,7 @@ import CouncilReport from "./CouncilReport.jsx";
 const PIECE_SET = buildPieceSet();
 
 export default function MultiplayerBoard({ myColor }) {
+  const { mode: analysisMode } = useAnalysisMode();
   const gameRef = useRef(createGame({ white: "Player 1", black: "Player 2" }));
   const engineRef = useRef(null);
   const unmountedRef = useRef(false);
@@ -248,9 +251,16 @@ export default function MultiplayerBoard({ myColor }) {
         onBackToLive={() => setPreviewPly(null)}
       />
       <CouncilPanel messages={councilMessages} recap={recap} />
-      {status && (
+      {status && ((analysisMode ?? "beginner") === "beginner" ? (
+        <CouncilReportBento
+          pgn={toPgn(gameRef.current)}
+          definingMoves={definingMoves}
+          report={councilReport}
+          loading={councilAnalyzing}
+        />
+      ) : (
         <CouncilReport definingMoves={definingMoves} report={councilReport} loading={councilAnalyzing} />
-      )}
+      ))}
     </div>
   );
 }

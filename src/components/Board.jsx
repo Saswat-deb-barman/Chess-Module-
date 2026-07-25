@@ -25,6 +25,8 @@ import CheckToast from "./CheckToast.jsx";
 import GameRail from "./GameRail.jsx";
 import CouncilPanel from "./CouncilPanel.jsx";
 import CouncilReport from "./CouncilReport.jsx";
+import CouncilReportBento from "./CouncilReportBento.jsx";
+import { useAnalysisMode } from "../lib/analysisMode.jsx";
 
 // Human always plays White in Phase 1 — a color picker is a cheap add
 // later but isn't needed to validate the core loop.
@@ -50,6 +52,7 @@ function detectMoment(game, move) {
 }
 
 export default function Board({ difficulty, onGameEnd, onRecap, onCouncilReport }) {
+  const { mode: analysisMode } = useAnalysisMode();
   const gameRef = useRef(
     createGame({ white: "Human", black: `Stockfish (${capitalize(difficulty)})` })
   );
@@ -312,9 +315,11 @@ export default function Board({ difficulty, onGameEnd, onRecap, onCouncilReport 
         onBackToLive={() => setPreviewPly(null)}
       />
       <CouncilPanel messages={councilMessages} recap={recap} />
-      {status && (
+      {status && ((analysisMode ?? "beginner") === "beginner" ? (
+        <CouncilReportBento pgn={pgn} definingMoves={definingMoves} report={councilReport} loading={councilAnalyzing} />
+      ) : (
         <CouncilReport definingMoves={definingMoves} report={councilReport} loading={councilAnalyzing} />
-      )}
+      ))}
     </div>
   );
 }

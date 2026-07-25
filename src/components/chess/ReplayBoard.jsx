@@ -7,16 +7,17 @@ import BoardSurface from "./BoardSurface.jsx";
  * Read-only, ply-scrubbable replay of a finished, static PGN — the first
  * real consumer of BoardSurface. Not wired to any live game state; the
  * position is purely derived from the PGN + a local ply cursor. Starts
- * at the final position (plyIndex = last ply), since that's the more
- * useful default for reviewing a finished game.
+ * at `initialPly` if given (e.g. a report's critical moment), otherwise
+ * the final position — the more useful default for reviewing a finished
+ * game generically.
  *
  * `decorative` boards (future: login front door) ignore `plyIndex` state
  * entirely and expect a caller-driven autoplay loop instead — that timer
  * lands with the first decorative consumer, not here.
  */
-export default function ReplayBoard({ pgn, decorative = false, originSquares, targetSquares, dangerSquares }) {
+export default function ReplayBoard({ pgn, decorative = false, initialPly, originSquares, targetSquares, dangerSquares }) {
   const totalPlies = getPlyCountFromPgn(pgn);
-  const [plyIndex, setPlyIndex] = useState(totalPlies - 1);
+  const [plyIndex, setPlyIndex] = useState(initialPly ?? totalPlies - 1);
 
   const position = getPositionAtPlyFromPgn(pgn, plyIndex);
   const customSquareStyles =
