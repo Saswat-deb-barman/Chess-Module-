@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { getPositionAtPlyFromPgn, getPlyCountFromPgn } from "../../lib/gameLogic.js";
+import { buildAnalysisHighlightStyles } from "../AnalysisHighlightLayer.jsx";
 import BoardSurface from "./BoardSurface.jsx";
 
 /**
@@ -13,11 +14,15 @@ import BoardSurface from "./BoardSurface.jsx";
  * entirely and expect a caller-driven autoplay loop instead — that timer
  * lands with the first decorative consumer, not here.
  */
-export default function ReplayBoard({ pgn, decorative = false }) {
+export default function ReplayBoard({ pgn, decorative = false, originSquares, targetSquares, dangerSquares }) {
   const totalPlies = getPlyCountFromPgn(pgn);
   const [plyIndex, setPlyIndex] = useState(totalPlies - 1);
 
   const position = getPositionAtPlyFromPgn(pgn, plyIndex);
+  const customSquareStyles =
+    originSquares || targetSquares || dangerSquares
+      ? buildAnalysisHighlightStyles(originSquares, targetSquares, dangerSquares)
+      : undefined;
 
   return (
     <div className="replay-board">
@@ -25,6 +30,7 @@ export default function ReplayBoard({ pgn, decorative = false }) {
         position={position}
         arePiecesDraggable={false}
         decorative={decorative}
+        customSquareStyles={customSquareStyles}
       />
       {!decorative && totalPlies > 0 && (
         <input
