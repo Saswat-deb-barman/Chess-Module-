@@ -51,7 +51,7 @@ function GameChat({ gameId }) {
 // mode. In a friend game the viewer could be either color, so "the
 // opponent" has to be derived by checking which seat's sub matches the
 // signed-in viewer, not assumed to always be game.black.
-function opponentLabel(game, viewerSub) {
+export function opponentLabel(game, viewerSub) {
   if (viewerSub && game.black_google_sub === viewerSub) return game.white;
   return game.black;
 }

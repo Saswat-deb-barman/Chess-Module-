@@ -4,6 +4,7 @@ import { fetchMyStats } from "../lib/stats.js";
 import { listGames } from "../lib/games.js";
 import TrajectoryHeader from "./dashboard/TrajectoryHeader.jsx";
 import ImprovementStrip from "./dashboard/ImprovementStrip.jsx";
+import PrimaryCta from "./dashboard/PrimaryCta.jsx";
 import { pickCriticalMove } from "./CouncilReportBento.jsx";
 import ReplayBoard from "./chess/ReplayBoard.jsx";
 import GameHistory from "./GameHistory.jsx";
@@ -76,14 +77,7 @@ export default function Dashboard({ onPlayBot, onPlayFriend, historyRefreshKey }
         </div>
       )}
 
-      <div className="cta-row">
-        <button className="start-button" onClick={onPlayBot}>
-          Play the bot
-        </button>
-        <button className="flip-button" onClick={onPlayFriend}>
-          Play a friend
-        </button>
-      </div>
+      <PrimaryCta games={games} viewerSub={user?.sub} onPlayBot={onPlayBot} onPlayFriend={onPlayFriend} />
       <GameHistory refreshKey={historyRefreshKey} />
     </div>
   );

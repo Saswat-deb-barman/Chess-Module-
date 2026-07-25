@@ -391,11 +391,35 @@ h1 {
   text-align: left;
 }
 
-.dashboard .cta-row {
-  display: flex;
-  justify-content: center;
-  gap: 12px;
+.primary-cta {
+  text-align: center;
   margin-bottom: 28px;
+}
+
+.primary-cta-button {
+  min-width: 220px;
+}
+
+.primary-cta-sub {
+  margin: 8px 0 0;
+  font-size: 0.75rem;
+  color: var(--paper-500);
+}
+
+.primary-cta-secondary {
+  display: block;
+  margin: 10px auto 0;
+  padding: 4px 10px;
+  border: none;
+  background: transparent;
+  color: var(--paper-500);
+  font-size: 0.8rem;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.primary-cta-secondary:hover {
+  color: var(--paper-300);
 }
 
 .trajectory-header {
