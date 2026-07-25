@@ -133,6 +133,15 @@ function parseJsonLoose(text) {
  * to narrate specific flagged moves rather than speaking in generalities.
  * Same fail-soft contract as every other function here — resolves to null
  * on missing key, network error, or unparseable output.
+ *
+ * Wave 1: any persona key may come back JSON null (a coach with nothing
+ * beginner-relevant to say stays silent — the existing CouncilReport.jsx
+ * already renders that correctly via a plain truthy check, no change
+ * needed there). Also adds `whoWasWinning`, a de-numbered plain-English
+ * eval sentence for the new beginner-mode bento. Same one call, same one
+ * cache write — no new model call, no schema change to how this is
+ * stored. Older cached reports simply predate both fields; consumers
+ * must treat their absence as "no data for this old game," not a crash.
  */
 export async function getCouncilReport({ pgn, result, definingMoves }) {
   if (!client || !pgn) return null;
@@ -162,18 +171,23 @@ ${formatDefiningMoves(definingMoves)}
 
 Write the council's post-game report. Each persona should reference specific moves from the game where relevant — especially the flagged ones above — rather than speaking in generalities. Keep each persona's section to 2-4 sentences; Coach Priya's should be 1-2 sentences.
 
+A coach with nothing genuinely beginner-relevant to add on this specific game should respond with JSON null for their key instead of forcing a comment — a clean, quiet game should produce fewer, not padded, persona sections. Don't invent a false takeaway just to fill the field.
+
+Also write a single "whoWasWinning" sentence: plain English on the flow of the game and who came out ahead, for a reader who cannot read an evaluation number. NEVER state a raw evaluation number or centipawn value in this sentence — describe the state instead (e.g. "was comfortably ahead," "the game stayed close," "had it almost won"), the way you'd say it out loud to someone watching over your shoulder.
+
 Respond with ONLY valid JSON, no markdown fences, matching exactly this shape:
 {
-  "historian": "...",
-  "tacticsTara": "...",
-  "strategistSam": "...",
-  "endgameEd": "...",
-  "coachPriya": "...",
+  "historian": "... or null",
+  "tacticsTara": "... or null",
+  "strategistSam": "... or null",
+  "endgameEd": "... or null",
+  "coachPriya": "... or null",
+  "whoWasWinning": "one plain-English sentence, no numbers",
   "definingMoveNotes": [
     { "moveNumber": 1, "color": "w", "san": "e4", "caption": "one short sentence, in whichever persona's voice fits best, on why this specific move mattered" }
   ]
 }
-definingMoveNotes must have exactly one entry per flagged move listed above, in the same order.`,
+definingMoveNotes must have exactly one entry per flagged move listed above, in the same order. whoWasWinning is required and must never be null.`,
         },
       ],
     });
