@@ -54,6 +54,7 @@ export function registerSocketHandlers(io) {
         black: room.black?.email ?? "Player 2",
         difficulty: null,
         result,
+        reason,
         pgn,
         whiteGoogleSub: room.white?.sub,
         whiteGoogleEmail: room.white?.email,

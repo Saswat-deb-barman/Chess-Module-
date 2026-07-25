@@ -42,6 +42,16 @@ export async function migrate() {
     -- the deep breakdown). jsonb, not a new table — same one-table
     -- philosophy as the rest of this schema.
     alter table games add column if not exists council_report jsonb;
+    -- Wave 1: the human-readable end reason ("Checkmate", "White wins by
+    -- resignation", "White wins on time"...) — already computed client-
+    -- side (App.jsx's res.reason) and shown in the post-game UI, but
+    -- never actually persisted until now. The stored result column is
+    -- only the PGN tag ("1-0"/"0-1"/"1/2-1/2"/"*"), which can't
+    -- distinguish checkmate from a timeout from a resignation — exactly
+    -- the distinction the lost_won_on_time pattern (patternTaxonomy.js)
+    -- needs. Historical rows have result_reason = null; detectPatterns
+    -- treats that as "no signal for this pattern," never a crash.
+    alter table games add column if not exists result_reason text;
     -- Wave 1: the beginner/advanced analysis-mode preference. Nullable,
     -- no default — "no row yet" / "analysis_mode is null" is a distinct
     -- state from "explicitly beginner," which is exactly what the
@@ -64,6 +74,7 @@ export async function saveGame({
   black,
   difficulty,
   result,
+  reason,
   pgn,
   whiteGoogleSub,
   whiteGoogleEmail,
@@ -74,10 +85,10 @@ export async function saveGame({
   if (!pool) return null;
   const { rows } = await pool.query(
     `insert into games
-       (google_sub, google_email, white, black, difficulty, result, pgn,
+       (google_sub, google_email, white, black, difficulty, result, result_reason, pgn,
         white_google_sub, white_google_email, black_google_sub, black_google_email, mode)
-     values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-     returning id, white, black, difficulty, result, pgn, recap, council_report, played_at, mode,
+     values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+     returning id, white, black, difficulty, result, result_reason, pgn, recap, council_report, played_at, mode,
                white_google_sub, black_google_sub`,
     [
       googleSub,
@@ -86,6 +97,7 @@ export async function saveGame({
       black,
       difficulty ?? null,
       result,
+      reason ?? null,
       pgn,
       whiteGoogleSub ?? null,
       whiteGoogleEmail ?? null,
@@ -113,7 +125,7 @@ export async function updateGameRecap({ googleSub, gameId, recap }) {
   const { rows } = await pool.query(
     `update games set recap = $1
      where id = $2 and (google_sub = $3 or white_google_sub = $3 or black_google_sub = $3)
-     returning id, white, black, difficulty, result, pgn, recap, council_report, played_at, mode,
+     returning id, white, black, difficulty, result, result_reason, pgn, recap, council_report, played_at, mode,
                white_google_sub, black_google_sub`,
     [recap, gameId, googleSub]
   );
@@ -131,7 +143,7 @@ export async function updateGameCouncilReport({ googleSub, gameId, councilReport
   const { rows } = await pool.query(
     `update games set council_report = $1
      where id = $2 and (google_sub = $3 or white_google_sub = $3 or black_google_sub = $3)
-     returning id, white, black, difficulty, result, pgn, recap, council_report, played_at, mode,
+     returning id, white, black, difficulty, result, result_reason, pgn, recap, council_report, played_at, mode,
                white_google_sub, black_google_sub`,
     [JSON.stringify(councilReport), gameId, googleSub]
   );
@@ -146,7 +158,7 @@ export async function updateGameCouncilReport({ googleSub, gameId, councilReport
 export async function getGame({ googleSub, gameId }) {
   if (!pool) return null;
   const { rows } = await pool.query(
-    `select id, white, black, difficulty, result, pgn, recap, council_report, played_at, mode,
+    `select id, white, black, difficulty, result, result_reason, pgn, recap, council_report, played_at, mode,
             white_google_sub, black_google_sub
      from games where id = $1 and (google_sub = $2 or white_google_sub = $2 or black_google_sub = $2)`,
     [gameId, googleSub]
@@ -182,7 +194,7 @@ export async function setUserSettings({ googleSub, analysisMode }) {
 export async function listGames(googleSub) {
   if (!pool) return [];
   const { rows } = await pool.query(
-    `select id, white, black, difficulty, result, pgn, recap, council_report, played_at, mode,
+    `select id, white, black, difficulty, result, result_reason, pgn, recap, council_report, played_at, mode,
             white_google_sub, black_google_sub
      from games where google_sub = $1 or white_google_sub = $1 or black_google_sub = $1
      order by played_at desc

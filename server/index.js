@@ -49,7 +49,7 @@ app.post("/council/report", async (req, res) => {
 });
 
 app.post("/games", requireAuth, async (req, res) => {
-  const { white, black, difficulty, result, pgn, whiteGoogleSub, whiteGoogleEmail, blackGoogleSub, blackGoogleEmail, mode } =
+  const { white, black, difficulty, result, reason, pgn, whiteGoogleSub, whiteGoogleEmail, blackGoogleSub, blackGoogleEmail, mode } =
     req.body ?? {};
   const game = await saveGame({
     googleSub: req.identity.sub,
@@ -58,6 +58,7 @@ app.post("/games", requireAuth, async (req, res) => {
     black,
     difficulty,
     result,
+    reason,
     pgn,
     whiteGoogleSub,
     whiteGoogleEmail,

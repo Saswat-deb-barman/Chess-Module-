@@ -28,12 +28,12 @@ async function request(path, { method = "GET", body, idToken, onUnauthorized } =
 
 export async function saveGame(
   idToken,
-  { white, black, difficulty, result, pgn, whiteGoogleSub, whiteGoogleEmail, blackGoogleSub, blackGoogleEmail, mode },
+  { white, black, difficulty, result, reason, pgn, whiteGoogleSub, whiteGoogleEmail, blackGoogleSub, blackGoogleEmail, mode },
   { onUnauthorized } = {}
 ) {
   const data = await request("/games", {
     method: "POST",
-    body: { white, black, difficulty, result, pgn, whiteGoogleSub, whiteGoogleEmail, blackGoogleSub, blackGoogleEmail, mode },
+    body: { white, black, difficulty, result, reason, pgn, whiteGoogleSub, whiteGoogleEmail, blackGoogleSub, blackGoogleEmail, mode },
     idToken,
     onUnauthorized,
   });
