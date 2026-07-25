@@ -130,3 +130,14 @@ export function getPositionAtPly(game, plyIndex) {
   }
   return toFen(preview);
 }
+
+/**
+ * Same idea as getPositionAtPly, but for a static, finished PGN (match
+ * history, decorative login replays) rather than a live gameRef — there's
+ * no existing Chess instance to read .history() from, just a PGN string.
+ */
+export function getPositionAtPlyFromPgn(pgn, plyIndex) {
+  const game = new Chess();
+  game.loadPgn(pgn);
+  return getPositionAtPly(game, plyIndex);
+}
