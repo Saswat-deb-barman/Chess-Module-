@@ -45,6 +45,11 @@ export async function listGames(idToken, { onUnauthorized } = {}) {
   return data?.games ?? [];
 }
 
+export async function listWorthReviewingGames(idToken, { onUnauthorized } = {}) {
+  const data = await request("/games?worthReviewing=1", { idToken, onUnauthorized });
+  return data?.games ?? [];
+}
+
 export async function updateGameRecap(idToken, gameId, recap, { onUnauthorized } = {}) {
   const data = await request(`/games/${gameId}`, { method: "PATCH", body: { recap }, idToken, onUnauthorized });
   return data?.game ?? null;

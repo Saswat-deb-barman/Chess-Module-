@@ -92,3 +92,27 @@ export function computeMyStats(games, viewerSub) {
     patterns,
   };
 }
+
+/**
+ * A ranking mode over the same rows `listGames()` already returns — not
+ * a SQL-level filter, so `patternTaxonomy.js` stays the single source of
+ * truth for what counts as a pattern. Scores blunder count higher than
+ * plain pattern-hit count (a game with a real blunder is more worth a
+ * second look than one with a mild recurring habit); games with nothing
+ * to show are dropped rather than padded in.
+ */
+export function rankWorthReviewing(games, viewerSub, limit = 5) {
+  return games
+    .filter(isAnalyzed)
+    .map((game) => {
+      const patterns = detectPatterns(game, viewerSub);
+      const blunderCount = (game.council_report?.definingMoves ?? []).filter(
+        (m) => m.classification === "blunder"
+      ).length;
+      return { game, patterns, blunderCount, score: blunderCount * 2 + patterns.length };
+    })
+    .filter((entry) => entry.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit)
+    .map(({ game, patterns, blunderCount }) => ({ ...game, patterns, blunderCount }));
+}

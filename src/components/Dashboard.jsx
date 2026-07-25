@@ -5,6 +5,7 @@ import { listGames } from "../lib/games.js";
 import TrajectoryHeader from "./dashboard/TrajectoryHeader.jsx";
 import ImprovementStrip from "./dashboard/ImprovementStrip.jsx";
 import PrimaryCta from "./dashboard/PrimaryCta.jsx";
+import WorthReviewing from "./dashboard/WorthReviewing.jsx";
 import { pickCriticalMove } from "./CouncilReportBento.jsx";
 import ReplayBoard from "./chess/ReplayBoard.jsx";
 import GameHistory from "./GameHistory.jsx";
@@ -22,7 +23,7 @@ export default function Dashboard({ onPlayBot, onPlayFriend, historyRefreshKey }
   const [stats, setStats] = useState(null);
   const [statsLoading, setStatsLoading] = useState(true);
   const [games, setGames] = useState([]);
-  const [drill, setDrill] = useState(null); // { game, pattern } | null
+  const [drill, setDrill] = useState(null); // { game, label } | null
 
   useEffect(() => {
     if (!user || !idToken) {
@@ -48,9 +49,13 @@ export default function Dashboard({ onPlayBot, onPlayFriend, historyRefreshKey }
     listGames(idToken, { onUnauthorized: signOut }).then(setGames);
   }, [user, idToken, signOut, historyRefreshKey]);
 
-  function handleDrill(pattern) {
+  function handleDrillPattern(pattern) {
     const match = games.find((g) => g.patterns?.includes(pattern.id));
-    if (match) setDrill({ game: match, pattern });
+    if (match) setDrill({ game: match, label: pattern.label });
+  }
+
+  function handleReviewGame(game) {
+    setDrill({ game, label: "Worth reviewing" });
   }
 
   const drillCriticalMove = drill
@@ -60,12 +65,13 @@ export default function Dashboard({ onPlayBot, onPlayFriend, historyRefreshKey }
   return (
     <div className="dashboard">
       <TrajectoryHeader stats={stats} loading={statsLoading} />
-      <ImprovementStrip patterns={stats?.patterns ?? []} loading={statsLoading} onDrill={handleDrill} />
+      <ImprovementStrip patterns={stats?.patterns ?? []} loading={statsLoading} onDrill={handleDrillPattern} />
+      <WorthReviewing refreshKey={historyRefreshKey} onSelect={handleReviewGame} />
 
       {drill && (
         <div className="dashboard-drill">
           <div className="dashboard-drill-head">
-            <p className="dashboard-drill-title">Reviewing: {drill.pattern.label}</p>
+            <p className="dashboard-drill-title">Reviewing: {drill.label}</p>
             <button className="dashboard-drill-close" onClick={() => setDrill(null)}>
               Close
             </button>

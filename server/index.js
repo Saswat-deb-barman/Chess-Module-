@@ -17,7 +17,7 @@ import {
 import { requireAuth, verifyGoogleToken } from "./auth.js";
 import { registerSocketHandlers } from "./socket.js";
 import { detectPatterns } from "./patternTaxonomy.js";
-import { computeMyStats } from "./stats.js";
+import { computeMyStats, rankWorthReviewing } from "./stats.js";
 
 const allowedOrigins = (
   process.env.CLIENT_ORIGIN || "http://localhost:5173,https://chess-module.vercel.app"
@@ -77,7 +77,10 @@ app.get("/games", requireAuth, async (req, res) => {
   // taxonomy improvement in patternTaxonomy.js applies retroactively to
   // every historical game without regenerating anything.
   const withPatterns = games.map((g) => ({ ...g, patterns: detectPatterns(g, req.identity.sub) }));
-  res.json({ games: withPatterns });
+  // "Worth reviewing" is a ranking mode over this same result set, not a
+  // separate query — see server/stats.js's rankWorthReviewing.
+  const result = req.query.worthReviewing ? rankWorthReviewing(withPatterns, req.identity.sub) : withPatterns;
+  res.json({ games: result });
 });
 
 // Wave 1: pure aggregate over already-classified game rows — no new
