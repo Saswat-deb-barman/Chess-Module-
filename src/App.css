@@ -661,7 +661,7 @@ h1 {
 
 .council-panel h3 {
   font-size: 0.85rem;
-  color: #666;
+  color: var(--paper-500);
   margin-bottom: 6px;
 }
 
@@ -670,21 +670,24 @@ h1 {
   align-items: flex-start;
   gap: 8px;
   padding: 8px 12px;
-  border-radius: 10px;
+  border-radius: var(--r-md);
   margin: 0 0 8px;
-  border: 1px solid;
+  border: 1px solid var(--line-2);
 }
 
+/* The one place the no-pure-black rule breaks, on purpose: white-move
+   comments get a light bg/dark text, black-move comments get a dark
+   bg/light text. The border is load-bearing — without it the light
+   bubble disappears against a light surface and the dark bubble
+   disappears against the felt. */
 .commentary-bubble--white {
-  background: #f5f3ee;
-  color: #1a1a1a;
-  border-color: rgba(0, 0, 0, 0.15);
+  background: var(--paper-100);
+  color: var(--felt-950);
 }
 
 .commentary-bubble--black {
-  background: #1a1a1a;
-  color: #f5f3ee;
-  border-color: rgba(255, 255, 255, 0.15);
+  background: var(--felt-950);
+  color: var(--paper-100);
 }
 
 .commentary-bubble__avatar {
@@ -694,11 +697,11 @@ h1 {
 
 .commentary-bubble__speaker {
   display: block;
-  font-size: 0.7rem;
+  font-size: var(--t-micro);
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
-  opacity: 0.65;
+  letter-spacing: 0.16em;
+  opacity: 0.62;
   margin-bottom: 2px;
 }
 
@@ -708,12 +711,13 @@ h1 {
 }
 
 .council-recap {
-  background: #eef0e6;
-  border-radius: 8px;
+  background: var(--felt-800);
+  border-radius: var(--r-sm);
   padding: 10px;
   font-size: 0.85rem;
   line-height: 1.4;
   margin-top: 8px;
+  color: var(--paper-100);
 }
 
 .council-report {
@@ -723,13 +727,13 @@ h1 {
 
 .council-report h3 {
   font-size: 0.85rem;
-  color: #666;
+  color: var(--paper-500);
   margin-bottom: 6px;
 }
 
 .council-report-loading {
   font-size: 0.85rem;
-  color: #999;
+  color: var(--paper-500);
   font-style: italic;
 }
 
@@ -742,11 +746,14 @@ h1 {
   gap: 6px;
 }
 
+/* Neutral/base treatment also covers the "normal" classification (tag
+   label "Notable") — there's no separate override for it below, same
+   as before this pass. */
 .defining-move {
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   padding: 8px 10px;
-  background: #f0f0ee;
-  border-left: 3px solid #ccc;
+  background: var(--felt-900);
+  border-left: 3px solid var(--line-2);
 }
 
 .defining-move-head {
@@ -761,57 +768,62 @@ h1 {
   text-transform: uppercase;
   letter-spacing: 0.04em;
   padding: 2px 8px;
-  border-radius: 10px;
-  background: #ddd;
-  color: #555;
+  border-radius: var(--r-pill);
+  background: var(--felt-700);
+  color: var(--paper-300);
 }
 
 .defining-move-san {
   font-size: 0.85rem;
   font-weight: 600;
+  color: var(--paper-50);
 }
 
 .defining-move-caption {
   font-size: 0.8rem;
-  color: #555;
+  color: var(--paper-300);
   margin: 4px 0 0;
   line-height: 1.4;
 }
 
 .defining-move-blunder {
-  background: #fbeeee;
-  border-left-color: #c94f4f;
+  background: var(--felt-900);
+  border-left-color: var(--loss);
 }
 .defining-move-blunder .defining-move-tag {
-  background: #c94f4f;
-  color: white;
+  background: var(--loss);
+  color: var(--paper-50);
 }
 
 .defining-move-mistake {
-  background: #fbf3ea;
-  border-left-color: #c98a4f;
+  background: var(--felt-900);
+  border-left-color: var(--warn);
 }
 .defining-move-mistake .defining-move-tag {
-  background: #c98a4f;
-  color: white;
+  background: var(--warn);
+  color: var(--brass-ink);
 }
 
+/* No exact kit precedent for "inaccuracy" (the kit's own 3-tier
+   move-quality scale only has blunder/mistake/good) — placed one notch
+   below "mistake": same warn hue, lower-emphasis neutral tag instead of
+   a filled one. */
 .defining-move-inaccuracy {
-  background: #fbf8ea;
-  border-left-color: #c9b64f;
+  background: var(--felt-900);
+  border-left-color: var(--warn);
 }
 .defining-move-inaccuracy .defining-move-tag {
-  background: #c9b64f;
-  color: white;
+  background: var(--felt-700);
+  color: var(--warn);
 }
 
 .defining-move-excellent {
-  background: #eef5ef;
-  border-left-color: #2d6a4f;
+  background: var(--felt-900);
+  border-left-color: var(--win);
 }
 .defining-move-excellent .defining-move-tag {
-  background: #2d6a4f;
-  color: white;
+  background: var(--win);
+  color: var(--felt-950);
 }
 
 .council-personas {
@@ -821,20 +833,23 @@ h1 {
 }
 
 .council-persona {
-  background: #f3ede0;
-  border-radius: 8px;
+  background: var(--felt-900);
+  border: 1px solid var(--line-1);
+  border-radius: var(--r-sm);
   padding: 10px 12px;
 }
 
 .council-persona h4 {
   margin: 0 0 4px;
-  font-size: 0.8rem;
-  color: #333;
+  font-family: var(--font-display);
+  font-weight: 650;
+  font-size: 0.85rem;
+  color: var(--brass-300);
 }
 
 .council-persona p {
   margin: 0;
   font-size: 0.82rem;
   line-height: 1.45;
-  color: #333;
+  color: var(--paper-100);
 }
