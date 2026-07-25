@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import DifficultySelector from "./components/DifficultySelector.jsx";
 import Board from "./components/Board.jsx";
 import FriendLobby from "./components/FriendLobby.jsx";
@@ -6,6 +6,7 @@ import MultiplayerBoard from "./components/MultiplayerBoard.jsx";
 import SignInButton from "./components/SignInButton.jsx";
 import GameHistory from "./components/GameHistory.jsx";
 import AnalysisModeChooser from "./components/AnalysisModeChooser.jsx";
+import Dashboard from "./components/Dashboard.jsx";
 import { useAuth } from "./lib/auth.jsx";
 import { useAnalysisMode } from "./lib/analysisMode.jsx";
 import { saveGame, updateGameRecap, updateGameCouncilReport } from "./lib/games.js";
@@ -15,17 +16,36 @@ export default function App() {
   const { mode, loading: modeLoading } = useAnalysisMode();
   // A shared room link (?room=CODE) should land straight in the friend
   // flow — FriendLobby's own effect that reads this param never gets a
-  // chance to run if this component isn't mounted in the first place.
-  const [topMode, setTopMode] = useState(() =>
-    new URLSearchParams(window.location.search).has("room") ? "friend" : "bot"
-  );
+  // chance to run if this component isn't mounted in the first place,
+  // and it should bypass the dashboard landing below entirely too.
+  const hasRoomCode = new URLSearchParams(window.location.search).has("room");
+  const [topMode, setTopMode] = useState(() => (hasRoomCode ? "friend" : "bot"));
   const [difficulty, setDifficulty] = useState("medium");
   const [gameKey, setGameKey] = useState(0); // bump to force a fresh Board mount
-  const [phase, setPhase] = useState("setup"); // "setup" | "playing" | "ended"
+  // "setup" | "playing" | "ended" | "home". Lazy-initialized to "home"
+  // for a returning signed-in user (token already in localStorage) so
+  // there's no flash of the setup screen before landing; the effect
+  // below catches the "just signed in this session" case the lazy
+  // initializer can't see (user was null at mount time).
+  const [phase, setPhase] = useState(() => (enabled && user && !hasRoomCode ? "home" : "setup"));
   const [result, setResult] = useState(null);
   const [savedGameId, setSavedGameId] = useState(null);
   const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
   const [friendGame, setFriendGame] = useState(null); // { myColor, roomCode } once both players are in
+  const landedOnHomeRef = useRef(phase === "home");
+
+  // Signed-in landing: once auth resolves to a real user (guest-only
+  // local dev with auth disabled entirely never engages this — "home"
+  // stays unreachable there, same as before this phase existed), land
+  // on the dashboard exactly once per session rather than the setup
+  // screen. Doesn't re-fire once landed, so navigating away (Play the
+  // bot) and back doesn't get yanked back to "home" unexpectedly.
+  useEffect(() => {
+    if (enabled && user && !hasRoomCode && !landedOnHomeRef.current && phase === "setup") {
+      landedOnHomeRef.current = true;
+      setPhase("home");
+    }
+  }, [enabled, user, hasRoomCode, phase]);
 
   function startGame() {
     setResult(null);
@@ -35,7 +55,7 @@ export default function App() {
 
   function newGame() {
     setGameKey((k) => k + 1);
-    setPhase("setup");
+    setPhase(enabled && user ? "home" : "setup");
   }
 
   function handleGameEnd(res) {
@@ -107,6 +127,18 @@ export default function App() {
         <p className="landing-message">Sign in with Google to play.</p>
       ) : modeGateLoading ? null : showModeChooser ? (
         <AnalysisModeChooser />
+      ) : phase === "home" ? (
+        <Dashboard
+          onPlayBot={() => {
+            setTopMode("bot");
+            setPhase("setup");
+          }}
+          onPlayFriend={() => {
+            setTopMode("friend");
+            setPhase("setup");
+          }}
+          historyRefreshKey={historyRefreshKey}
+        />
       ) : (
         <>
           <div className="top-mode-toggle">

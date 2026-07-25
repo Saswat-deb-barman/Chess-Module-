@@ -386,6 +386,18 @@ h1 {
   background: var(--brass-300);
 }
 
+.dashboard {
+  margin-top: 16px;
+  text-align: left;
+}
+
+.dashboard .cta-row {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 28px;
+}
+
 .board-screen {
   margin-top: 16px;
 }
