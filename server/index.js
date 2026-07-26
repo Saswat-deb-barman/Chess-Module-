@@ -8,6 +8,7 @@ import {
   migrate,
   saveGame,
   listGames,
+  getFriendGames,
   updateGameRecap,
   updateGameCouncilReport,
   getGame,
@@ -17,7 +18,7 @@ import {
 import { requireAuth, verifyGoogleToken } from "./auth.js";
 import { registerSocketHandlers } from "./socket.js";
 import { detectPatterns } from "./patternTaxonomy.js";
-import { computeMyStats, rankWorthReviewing } from "./stats.js";
+import { computeMyStats, rankWorthReviewing, computeRivalries } from "./stats.js";
 
 const allowedOrigins = (
   process.env.CLIENT_ORIGIN || "http://localhost:5173,https://chess-module.vercel.app"
@@ -90,6 +91,14 @@ app.get("/me/stats", requireAuth, async (req, res) => {
   const games = await listGames(req.identity.sub);
   const stats = computeMyStats(games, req.identity.sub);
   res.json(stats);
+});
+
+// Wave 3: rivalries as a pure derived query over finished friend games —
+// no opponent table, no new persistence. See server/stats.js's
+// computeRivalries and server/db.js's getFriendGames.
+app.get("/me/rivalries", requireAuth, async (req, res) => {
+  const games = await getFriendGames(req.identity.sub);
+  res.json({ rivalries: computeRivalries(games, req.identity.sub) });
 });
 
 app.patch("/games/:id", requireAuth, async (req, res) => {

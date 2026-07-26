@@ -203,3 +203,25 @@ export async function listGames(googleSub) {
   );
   return rows;
 }
+
+/**
+ * Wave 3: the rivalries source data. Deliberately NOT listGames() — that
+ * query caps at 50 rows (fine for "recent match history," wrong for "all
+ * finished friend games with this opponent, ever"). Only rows with both
+ * seats' identities recorded count as a real head-to-head; a solo-vs-bot
+ * row (mode='bot') has no black_google_sub and would otherwise show up as
+ * a phantom rivalry against nobody.
+ */
+export async function getFriendGames(googleSub) {
+  if (!pool) return [];
+  const { rows } = await pool.query(
+    `select id, white, black, result, result_reason, played_at, mode,
+            white_google_sub, white_google_email, black_google_sub, black_google_email
+     from games
+     where mode = 'friend' and white_google_sub is not null and black_google_sub is not null
+       and (white_google_sub = $1 or black_google_sub = $1)
+     order by played_at desc`,
+    [googleSub]
+  );
+  return rows;
+}
