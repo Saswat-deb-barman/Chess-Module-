@@ -1125,6 +1125,24 @@ h1 {
   box-shadow: var(--e-2);
 }
 
+.disconnect-banner {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 6;
+  padding: 6px 16px;
+  border-radius: var(--r-pill);
+  background: var(--felt-800);
+  border: 1px solid var(--brass-500);
+  color: var(--paper-50);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-align: center;
+  white-space: nowrap;
+  box-shadow: var(--e-2);
+}
+
 .bot-thinking {
   color: var(--paper-500);
   font-size: 0.85rem;
