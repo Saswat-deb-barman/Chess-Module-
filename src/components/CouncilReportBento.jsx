@@ -1,6 +1,5 @@
-import { getMoveAtPly } from "../lib/gameLogic.js";
 import { PATTERN_LABELS } from "../lib/patternLabels.js";
-import ReplayBoard from "./chess/ReplayBoard.jsx";
+import RibbonBoard from "./analysis/RibbonBoard.jsx";
 
 const PERSONAS = [
   { key: "historian", name: "The Historian" },
@@ -31,15 +30,15 @@ export function pickCriticalMove(definingMoves) {
  * tile (report[key] is JSON null from server/council.js, never padded);
  * this stays a straight port of that same falsy check.
  *
- * Ribbon-as-navigation (tap a marked moment to scrub) is explicitly
- * Wave 2 — this ships with a single fixed critical-moment board plus
- * ReplayBoard's plain scrubber for anyone curious to look further.
+ * Wave 2: the board-hero is now a RibbonBoard — the eval ribbon doubles
+ * as navigation (tap a marked moment to scrub), and the board's highlight
+ * + caption track whatever ply is currently shown, not a fixed snapshot
+ * of the initial critical moment.
  */
-export default function CouncilReportBento({ pgn, definingMoves = [], report, loading, patterns = [] }) {
+export default function CouncilReportBento({ pgn, definingMoves = [], evalTrack, report, loading, patterns = [] }) {
   if (!loading && !report && definingMoves.length === 0) return null;
 
   const criticalMove = pickCriticalMove(definingMoves);
-  const heroMove = criticalMove && pgn ? getMoveAtPly(pgn, criticalMove.ply - 1) : null;
   const topPattern = patterns[0];
 
   return (
@@ -48,19 +47,16 @@ export default function CouncilReportBento({ pgn, definingMoves = [], report, lo
 
       {loading && <p className="council-report-loading">The council is reviewing the game…</p>}
 
-      {heroMove && (
+      {criticalMove && pgn && (
         <div className="council-bento-hero">
           <p className="council-bento-hero-cap">The moment it turned</p>
-          <ReplayBoard
+          <RibbonBoard
             pgn={pgn}
+            definingMoves={definingMoves}
+            evalTrack={evalTrack}
             initialPly={criticalMove.ply - 1}
-            originSquares={[heroMove.from]}
-            targetSquares={[heroMove.to]}
+            mode="beginner"
           />
-          <p className="council-bento-hero-caption">
-            {criticalMove.moveNumber}
-            {criticalMove.color === "w" ? "." : "…"} {criticalMove.san}
-          </p>
         </div>
       )}
 

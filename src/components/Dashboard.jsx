@@ -7,7 +7,7 @@ import ImprovementStrip from "./dashboard/ImprovementStrip.jsx";
 import PrimaryCta from "./dashboard/PrimaryCta.jsx";
 import WorthReviewing from "./dashboard/WorthReviewing.jsx";
 import { pickCriticalMove } from "./CouncilReportBento.jsx";
-import ReplayBoard from "./chess/ReplayBoard.jsx";
+import RibbonBoard from "./analysis/RibbonBoard.jsx";
 import GameHistory from "./GameHistory.jsx";
 
 /**
@@ -76,9 +76,12 @@ export default function Dashboard({ onPlayBot, onPlayFriend, historyRefreshKey }
               Close
             </button>
           </div>
-          <ReplayBoard
+          <RibbonBoard
             pgn={drill.game.pgn}
+            definingMoves={drill.game.council_report?.definingMoves ?? []}
+            evalTrack={drill.game.council_report?.evalTrack}
             initialPly={drillCriticalMove ? drillCriticalMove.ply - 1 : undefined}
+            mode="beginner"
           />
         </div>
       )}

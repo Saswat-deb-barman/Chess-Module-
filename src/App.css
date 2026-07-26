@@ -1060,12 +1060,71 @@ h1 {
   margin: 0 0 8px;
 }
 
-.council-bento-hero-caption {
+.ribbon-board-caption {
   font-family: var(--font-display);
   font-weight: 600;
   color: var(--paper-50);
-  margin-top: 8px;
+  margin: 8px 0 0;
   text-align: center;
+}
+
+.eval-ribbon {
+  margin-top: 8px;
+}
+
+.eval-ribbon-svg {
+  width: 100%;
+  height: 28px;
+  display: block;
+  cursor: default;
+}
+
+.eval-ribbon-midline {
+  stroke: var(--line-1);
+  stroke-width: 0.5;
+}
+
+.eval-ribbon-line {
+  stroke: var(--paper-300);
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+
+.eval-ribbon-flatline {
+  stroke: var(--line-2);
+  stroke-width: 1;
+  stroke-dasharray: 2 2;
+}
+
+.eval-ribbon-marker {
+  cursor: pointer;
+}
+
+.eval-ribbon-cursor {
+  stroke: var(--brass-500);
+  stroke-width: 1;
+}
+
+.eval-ribbon-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.eval-ribbon-tick-label {
+  padding: 2px 8px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line-1);
+  background: transparent;
+  color: var(--paper-300);
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.eval-ribbon-tick-label:hover {
+  background: var(--felt-800);
 }
 
 .council-bento-tile {
