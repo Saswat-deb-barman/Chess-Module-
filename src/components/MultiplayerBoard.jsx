@@ -12,6 +12,7 @@ import { buildMoveHighlightStyles } from "./MoveHighlightLayer.jsx";
 import { buildPieceSet } from "./chess/pieceSet.jsx";
 import TurnIndicator from "./TurnIndicator.jsx";
 import CheckToast from "./CheckToast.jsx";
+import DisconnectBanner from "./DisconnectBanner.jsx";
 import GameRail from "./GameRail.jsx";
 import CouncilPanel from "./CouncilPanel.jsx";
 import CouncilReport from "./CouncilReport.jsx";
@@ -45,7 +46,7 @@ import { useAnalysisMode } from "../lib/analysisMode.jsx";
  */
 const PIECE_SET = buildPieceSet();
 
-export default function MultiplayerBoard({ myColor, onLeave }) {
+export default function MultiplayerBoard({ myColor, roomCode, onLeave }) {
   const { mode: analysisMode } = useAnalysisMode();
   const gameRef = useRef(createGame({ white: "Player 1", black: "Player 2" }));
   const engineRef = useRef(null);
@@ -64,6 +65,11 @@ export default function MultiplayerBoard({ myColor, onLeave }) {
   const [evalTrack, setEvalTrack] = useState([]);
   const [councilReport, setCouncilReport] = useState(null);
   const [councilAnalyzing, setCouncilAnalyzing] = useState(false);
+  // CM-207: null while both sides are connected; { until } while the
+  // opponent has dropped and the server's auto-resign grace is ticking.
+  // Doesn't set `status` — the game is paused, not over, so this stays a
+  // banner overlay rather than routing through the post-game UI.
+  const [disconnectGrace, setDisconnectGrace] = useState(null);
 
   useDocumentTitle(isMyTurn(gameRef.current, myColor, status));
 
@@ -105,8 +111,15 @@ export default function MultiplayerBoard({ myColor, onLeave }) {
         if (!unmountedRef.current) setCouncilAnalyzing(false);
       }
     }
-    function handleOpponentDisconnected() {
-      setStatus((current) => current ?? "Your opponent disconnected.");
+    // CM-207: the room survives a disconnect for 60s — this shows the
+    // countdown banner instead of ending the game locally; only the
+    // server's own "gameOver" (fired if the grace window actually elapses)
+    // sets `status`.
+    function handleOpponentDisconnected({ until } = {}) {
+      setDisconnectGrace({ until });
+    }
+    function handleOpponentReconnected() {
+      setDisconnectGrace(null);
     }
     function handleCouncilPing({ message, side }) {
       setCouncilMessages((prev) => [...prev, { side, text: message }]);
@@ -127,6 +140,7 @@ export default function MultiplayerBoard({ myColor, onLeave }) {
     socket.on("boardState", handleBoardState);
     socket.on("gameOver", handleGameOver);
     socket.on("opponentDisconnected", handleOpponentDisconnected);
+    socket.on("opponentReconnected", handleOpponentReconnected);
     socket.on("councilPing", handleCouncilPing);
     socket.on("councilRecap", handleCouncilRecap);
     socket.on("councilReport", handleCouncilReport);
@@ -135,11 +149,25 @@ export default function MultiplayerBoard({ myColor, onLeave }) {
       socket.off("boardState", handleBoardState);
       socket.off("gameOver", handleGameOver);
       socket.off("opponentDisconnected", handleOpponentDisconnected);
+      socket.off("opponentReconnected", handleOpponentReconnected);
       socket.off("councilPing", handleCouncilPing);
       socket.off("councilRecap", handleCouncilRecap);
       socket.off("councilReport", handleCouncilReport);
     };
   }, []);
+
+  // CM-207: MultiplayerBoard only ever mounts after the initial join
+  // already happened in FriendLobby, so any "connect" firing while this is
+  // mounted is socket.io's own auto-reconnect after a network blip, never
+  // the first connection — re-announcing via "joinRoom" is idempotent
+  // server-side (resolveSeatForIdentity resolves it as a reconnect).
+  useEffect(() => {
+    function handleReconnect() {
+      if (roomCode) socket.emit("joinRoom", roomCode);
+    }
+    socket.on("connect", handleReconnect);
+    return () => socket.off("connect", handleReconnect);
+  }, [roomCode]);
 
   // Selection can survive past a game-ending event that doesn't route
   // through applyMove (opponent disconnect, server-declared game over) —
@@ -162,7 +190,7 @@ export default function MultiplayerBoard({ myColor, onLeave }) {
   }
 
   function onPieceDrop(sourceSquare, targetSquare) {
-    if (status || gameRef.current.turn() !== myColor) return false;
+    if (status || disconnectGrace || gameRef.current.turn() !== myColor) return false;
     const move = applyMove(sourceSquare, targetSquare);
     if (!move) return false; // triggers react-chessboard's snapback
     setSelectedSquare(null);
@@ -170,7 +198,7 @@ export default function MultiplayerBoard({ myColor, onLeave }) {
   }
 
   function onSquareClick(square, piece) {
-    if (!isMyTurn(gameRef.current, myColor, status)) return;
+    if (disconnectGrace || !isMyTurn(gameRef.current, myColor, status)) return;
 
     if (selectedSquare === square) {
       setSelectedSquare(null);
@@ -229,12 +257,13 @@ export default function MultiplayerBoard({ myColor, onLeave }) {
             customDarkSquareStyle={{ backgroundColor: "var(--sq-dark)" }}
             customLightSquareStyle={{ backgroundColor: "var(--sq-light)" }}
             boardOrientation={boardOrientation}
-            arePiecesDraggable={!status && !isPreviewing}
+            arePiecesDraggable={!status && !isPreviewing && !disconnectGrace}
           />
         )}
         {!isPreviewing && checkAlert.checkedColor === myColor && !checkAlert.isCheckmate && (
           <CheckToast key={fen} />
         )}
+        {!isPreviewing && disconnectGrace && <DisconnectBanner until={disconnectGrace.until} />}
       </div>
       {!status && (
         <button className="resign-button" onClick={handleResign}>

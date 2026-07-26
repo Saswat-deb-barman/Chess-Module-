@@ -222,7 +222,7 @@ export default function App() {
 
           {topMode === "friend" &&
             (friendGame ? (
-              <MultiplayerBoard myColor={friendGame.myColor} onLeave={leaveFriendGame} />
+              <MultiplayerBoard myColor={friendGame.myColor} roomCode={friendGame.roomCode} onLeave={leaveFriendGame} />
             ) : (
               <FriendLobby onGameStart={setFriendGame} initialRoomCode={pendingChallengeRoomCode} />
             ))}

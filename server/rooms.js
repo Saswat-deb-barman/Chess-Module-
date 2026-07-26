@@ -5,6 +5,9 @@ const ROOM_CODE_CHARS = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
 const ROOM_CODE_LENGTH = 6;
 const ABANDONED_ROOM_MAX_AGE_MS = 6 * 60 * 60 * 1000; // 6 hours
 const CLEANUP_INTERVAL_MS = 30 * 60 * 1000; // 30 minutes
+// CM-207: how long a room survives a disconnect before the server declares
+// an auto-resignation. 60s per the locked spec decision.
+const DISCONNECT_GRACE_MS = 60 * 1000;
 
 const rooms = new Map();
 
@@ -82,11 +85,22 @@ export function reserveRoom({ fromSub, fromEmail, toSub, toEmail }) {
  * live socket or a real Google token. Reconnect-safe: markDisconnected
  * only nulls a seat's socketId, not the seat object, so the same sub can
  * reclaim its seat after a drop; a different sub can never steal it.
+ *
+ * CM-207: originally only reserved/challenge rooms (`room.expected`) used
+ * this path. Generalized so ad hoc rooms (the ordinary "Play a friend"
+ * flow) support reconnect too — for those, "expected" is simply whoever
+ * already has a seat here (checked against the actual `white`/`black`
+ * occupants instead of a separate `expected` record, since ad hoc rooms
+ * never have one).
  */
 export function resolveSeatForIdentity(room, sub) {
-  if (!room.expected) return null; // ad hoc rooms don't use this path at all
-  if (room.expected.w.sub === sub && !isSeatConnected(room.white)) return "w";
-  if (room.expected.b.sub === sub && !isSeatConnected(room.black)) return "b";
+  if (room.expected) {
+    if (room.expected.w.sub === sub && !isSeatConnected(room.white)) return "w";
+    if (room.expected.b.sub === sub && !isSeatConnected(room.black)) return "b";
+    return null;
+  }
+  if (room.white?.sub === sub && !isSeatConnected(room.white)) return "w";
+  if (room.black?.sub === sub && !isSeatConnected(room.black)) return "b";
   return null;
 }
 
@@ -134,6 +148,30 @@ export function bothSeatsDisconnected(room) {
 }
 
 /**
+ * CM-207: arms a room's 60s auto-resign timer. `onExpire(room)` is
+ * socket.js's job to supply — it needs `endGame`, which this module must
+ * not import (rooms.js stays pure room-state/matching logic; socket.js
+ * orchestrates the actual game-ending consequence, same layering as
+ * every other room primitive here).
+ */
+export function armDisconnectGrace(room, onExpire) {
+  room.disconnectGraceUntil = Date.now() + DISCONNECT_GRACE_MS;
+  room.disconnectTimer = setTimeout(() => onExpire(room), DISCONNECT_GRACE_MS);
+}
+
+/**
+ * Cancels a pending auto-resign timer (a reconnect, or both seats going
+ * quiet — nobody left to resign in favor of) — must always be called
+ * before a room is deleted or re-armed, or a stale timer fires against
+ * state that's no longer valid.
+ */
+export function disarmDisconnectGrace(room) {
+  clearTimeout(room.disconnectTimer);
+  room.disconnectTimer = null;
+  room.disconnectGraceUntil = null;
+}
+
+/**
  * In-memory rooms have no other cleanup path since there's no
  * persistence layer to reap them. Two triggers: both seats disconnected
  * (the common case — socket.js's disconnect handler already deletes a
@@ -154,7 +192,10 @@ export function sweepAbandonedRooms() {
   for (const [code, room] of rooms) {
     const tooOld = now - room.createdAt > ABANDONED_ROOM_MAX_AGE_MS;
     const everOccupied = room.white !== null || room.black !== null;
-    if ((everOccupied && bothSeatsDisconnected(room)) || tooOld) rooms.delete(code);
+    if ((everOccupied && bothSeatsDisconnected(room)) || tooOld) {
+      disarmDisconnectGrace(room);
+      rooms.delete(code);
+    }
   }
 }
 

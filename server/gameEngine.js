@@ -24,8 +24,12 @@ export function tryMove(game, from, to, promotion = "q") {
   }
 }
 
-export function getGameOverReason(game, { flagFallWinner, resignedBy } = {}) {
+export function getGameOverReason(game, { flagFallWinner, resignedBy, disconnectedBy } = {}) {
   if (flagFallWinner) return `${flagFallWinner === "w" ? "White" : "Black"} wins on time`;
+  // CM-207: the 60s disconnect-grace auto-resign — distinct reason string
+  // from a voluntary resignation (same losing-side result tag though, see
+  // getResultTag below), so result_reason can tell the two apart later.
+  if (disconnectedBy) return `${disconnectedBy === "w" ? "Black" : "White"} wins by disconnection`;
   if (resignedBy) return `${resignedBy === "w" ? "Black" : "White"} wins by resignation`;
   if (!game.isGameOver()) return null;
 
