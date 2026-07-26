@@ -18,7 +18,7 @@ function generateRoomCode() {
   return code;
 }
 
-function isSeatConnected(seat) {
+export function isSeatConnected(seat) {
   return !!seat?.socketId;
 }
 
@@ -44,6 +44,50 @@ export function createRoom(creatorSocketId, identity) {
   };
   rooms.set(code, room);
   return room;
+}
+
+/**
+ * Wave 3: a room pre-created for two SPECIFIC, named Google subs before
+ * either has a live socket connection — what a challenge accept needs
+ * (accept is a REST call; neither player necessarily has an open socket
+ * at that moment). Unlike createRoom, nobody is seated yet: `expected`
+ * records who's allowed into which seat, and each party claims their own
+ * by calling the existing "joinRoom" socket event with this room's code
+ * once they connect (see resolveSeatForIdentity + socket.js's generalized
+ * joinRoom). Ad hoc rooms (createRoom) never set `expected` and are
+ * completely unaffected by anything below.
+ */
+export function reserveRoom({ fromSub, fromEmail, toSub, toEmail }) {
+  const code = generateRoomCode();
+  const room = {
+    code,
+    white: null,
+    black: null,
+    game: createGame({ white: fromEmail, black: toEmail }),
+    ended: false,
+    createdAt: Date.now(),
+    reportRequested: false,
+    expected: {
+      w: { sub: fromSub, email: fromEmail },
+      b: { sub: toSub, email: toEmail },
+    },
+  };
+  rooms.set(code, room);
+  return room;
+}
+
+/**
+ * Pure decision function — "which seat, if any, does this sub get to
+ * claim right now." Exported on its own so it's unit-testable without a
+ * live socket or a real Google token. Reconnect-safe: markDisconnected
+ * only nulls a seat's socketId, not the seat object, so the same sub can
+ * reclaim its seat after a drop; a different sub can never steal it.
+ */
+export function resolveSeatForIdentity(room, sub) {
+  if (!room.expected) return null; // ad hoc rooms don't use this path at all
+  if (room.expected.w.sub === sub && !isSeatConnected(room.white)) return "w";
+  if (room.expected.b.sub === sub && !isSeatConnected(room.black)) return "b";
+  return null;
 }
 
 /**
@@ -96,12 +140,21 @@ export function bothSeatsDisconnected(room) {
  * room the instant both players have left, this is just a backstop), or
  * a room that's simply been open too long regardless of connection state
  * (e.g. a host waiting alone for hours).
+ *
+ * A freshly reserveRoom()'d room starts with BOTH seats legitimately null
+ * (nobody has connected yet, by design) — that must not read as
+ * "abandoned mid-game" the same way two real, previously-occupied seats
+ * going quiet does, or a challenge room gets reaped before either party
+ * has a chance to join it. Only a room that was ever occupied sweeps
+ * immediately on both-quiet; an unclaimed reservation still expires
+ * eventually via `tooOld`.
  */
 export function sweepAbandonedRooms() {
   const now = Date.now();
   for (const [code, room] of rooms) {
     const tooOld = now - room.createdAt > ABANDONED_ROOM_MAX_AGE_MS;
-    if (bothSeatsDisconnected(room) || tooOld) rooms.delete(code);
+    const everOccupied = room.white !== null || room.black !== null;
+    if ((everOccupied && bothSeatsDisconnected(room)) || tooOld) rooms.delete(code);
   }
 }
 

@@ -64,6 +64,25 @@ export async function migrate() {
       analysis_mode text,
       updated_at timestamptz not null default now()
     );
+    -- Wave 3: the challenge object. No users table exists (identity is the
+    -- verified Google token's {sub, email}), so this is keyed by bare
+    -- google_sub strings, matching every other table's idiom — not a real
+    -- fk. serial pk, matching every other table's id style (no uuid
+    -- extension is enabled anywhere in this schema).
+    create table if not exists challenges (
+      id serial primary key,
+      from_google_sub text not null,
+      from_google_email text,
+      to_google_sub text not null,
+      to_google_email text,
+      time_control text not null default '10|0',
+      status text not null default 'pending', -- pending | accepted | declined | expired
+      room_code text,
+      created_at timestamptz not null default now(),
+      resolved_at timestamptz
+    );
+    create index if not exists challenges_to_google_sub_idx on challenges (to_google_sub);
+    create index if not exists challenges_from_google_sub_idx on challenges (from_google_sub);
   `);
 }
 
@@ -224,4 +243,80 @@ export async function getFriendGames(googleSub) {
     [googleSub]
   );
   return rows;
+}
+
+const CHALLENGE_COLUMNS = `id, from_google_sub, from_google_email, to_google_sub, to_google_email,
+       time_control, status, room_code, created_at, resolved_at`;
+
+export async function createChallenge({ fromGoogleSub, fromGoogleEmail, toGoogleSub, toGoogleEmail, timeControl }) {
+  if (!pool) return null;
+  const { rows } = await pool.query(
+    `insert into challenges (from_google_sub, from_google_email, to_google_sub, to_google_email, time_control)
+     values ($1, $2, $3, $4, $5)
+     returning ${CHALLENGE_COLUMNS}`,
+    [fromGoogleSub, fromGoogleEmail ?? null, toGoogleSub, toGoogleEmail ?? null, timeControl ?? "10|0"]
+  );
+  return rows[0] ?? null;
+}
+
+export async function getChallenge(id) {
+  if (!pool) return null;
+  const { rows } = await pool.query(`select ${CHALLENGE_COLUMNS} from challenges where id = $1`, [id]);
+  return rows[0] ?? null;
+}
+
+export async function listIncomingChallenges(googleSub) {
+  if (!pool) return [];
+  const { rows } = await pool.query(
+    `select ${CHALLENGE_COLUMNS} from challenges where to_google_sub = $1 and status = 'pending' order by created_at desc`,
+    [googleSub]
+  );
+  return rows;
+}
+
+// No status filter — the challenger's own poll (see PrimaryCta's
+// challenge-first flow) needs to see the moment a pending challenge flips
+// to accepted, not just while it's still pending.
+export async function listOutgoingChallenges(googleSub) {
+  if (!pool) return [];
+  const { rows } = await pool.query(
+    `select ${CHALLENGE_COLUMNS} from challenges where from_google_sub = $1 order by created_at desc`,
+    [googleSub]
+  );
+  return rows;
+}
+
+// The `status = 'pending'` guard makes a double-accept (e.g. two tabs) a
+// no-op — the second call's UPDATE matches zero rows and returns null,
+// rather than silently re-reserving a second room for the same challenge.
+export async function acceptChallenge({ id, roomCode }) {
+  if (!pool) return null;
+  const { rows } = await pool.query(
+    `update challenges set status = 'accepted', room_code = $1, resolved_at = now()
+     where id = $2 and status = 'pending'
+     returning ${CHALLENGE_COLUMNS}`,
+    [roomCode, id]
+  );
+  return rows[0] ?? null;
+}
+
+export async function declineChallenge(id) {
+  if (!pool) return null;
+  const { rows } = await pool.query(
+    `update challenges set status = 'declined', resolved_at = now()
+     where id = $1 and status = 'pending'
+     returning ${CHALLENGE_COLUMNS}`,
+    [id]
+  );
+  return rows[0] ?? null;
+}
+
+// A 24h TTL sweep so the "waiting on you" strip doesn't accrete zombies
+// from challenges nobody ever answered.
+export async function expireStaleChallenges() {
+  if (!pool) return;
+  await pool.query(
+    `update challenges set status = 'expired', resolved_at = now()
+     where status = 'pending' and created_at < now() - interval '24 hours'`
+  );
 }

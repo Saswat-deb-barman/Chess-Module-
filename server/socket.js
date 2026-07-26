@@ -7,6 +7,8 @@ import {
   markDisconnected,
   bothSeatsDisconnected,
   startCleanupSweep,
+  resolveSeatForIdentity,
+  isSeatConnected,
 } from "./rooms.js";
 import { tryMove, getGameOverReason, getResultTag, detectMoment, toFen, toPgn } from "./gameEngine.js";
 import { saveGame, updateGameRecap, updateGameCouncilReport } from "./db.js";
@@ -102,8 +104,31 @@ export function registerSocketHandlers(io) {
     socket.on("joinRoom", (code) => {
       const room = getRoom(code);
       if (!room) return socket.emit("joinError", "Room not found.");
-      if (room.black) return socket.emit("joinError", "Room is already full.");
 
+      // Wave 3: a challenge-accept room is reserved for two named subs
+      // before either connects — resolveSeatForIdentity is the only path
+      // in (rejecting anyone whose sub doesn't match an unclaimed expected
+      // seat), a stricter check than the ad hoc path below. Either party
+      // may arrive first, so "opponentJoined" only fires once BOTH seats
+      // are actually connected, not just "someone just joined."
+      if (room.expected) {
+        const color = resolveSeatForIdentity(room, socket.identity.sub);
+        if (!color) return socket.emit("joinError", "This game isn't for you.");
+        room[color === "w" ? "white" : "black"] = {
+          socketId: socket.id,
+          sub: socket.identity.sub,
+          email: socket.identity.email,
+        };
+        socket.join(room.code);
+        socket.emit("playerRole", color);
+        if (isSeatConnected(room.white) && isSeatConnected(room.black)) {
+          io.to(room.code).emit("opponentJoined");
+        }
+        return;
+      }
+
+      // Ad hoc path — unchanged: any code-holder may claim the open seat.
+      if (room.black) return socket.emit("joinError", "Room is already full.");
       room.black = { socketId: socket.id, sub: socket.identity.sub, email: socket.identity.email };
       room.game.header("Black", socket.identity.email);
       socket.join(room.code);
