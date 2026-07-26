@@ -14,11 +14,36 @@ import {
   getGame,
   getUserSettings,
   setUserSettings,
+  createChallenge,
+  getChallenge,
+  listIncomingChallenges,
+  listOutgoingChallenges,
+  acceptChallenge,
+  declineChallenge,
+  expireStaleChallenges,
 } from "./db.js";
 import { requireAuth, verifyGoogleToken } from "./auth.js";
 import { registerSocketHandlers } from "./socket.js";
+import { reserveRoom } from "./rooms.js";
 import { detectPatterns } from "./patternTaxonomy.js";
 import { computeMyStats, rankWorthReviewing, computeRivalries } from "./stats.js";
+
+const EXPIRE_CHALLENGES_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
+
+function toChallengeDTO(row) {
+  if (!row) return null;
+  return {
+    id: row.id,
+    fromUserId: row.from_google_sub,
+    fromName: row.from_google_email,
+    toUserId: row.to_google_sub,
+    toName: row.to_google_email,
+    timeControl: row.time_control,
+    status: row.status,
+    roomCode: row.room_code,
+    createdAt: row.created_at,
+  };
+}
 
 const allowedOrigins = (
   process.env.CLIENT_ORIGIN || "http://localhost:5173,https://chess-module.vercel.app"
@@ -101,6 +126,61 @@ app.get("/me/rivalries", requireAuth, async (req, res) => {
   res.json({ rivalries: computeRivalries(games, req.identity.sub) });
 });
 
+// Wave 3: the challenge object — the reach-out half of rivalries. No
+// "challenge by raw email" here (toGoogleSub must be a real user this
+// caller already knows, e.g. from a rivalry row or a past game) — that's
+// an invite-a-stranger flow, explicitly out of scope; the cold-invite
+// path stays the shareable room link.
+app.post("/challenges", requireAuth, async (req, res) => {
+  const { toGoogleSub, toGoogleEmail, timeControl } = req.body ?? {};
+  if (!toGoogleSub || toGoogleSub === req.identity.sub) {
+    return res.status(400).json({ error: "Invalid opponent." });
+  }
+  const challenge = await createChallenge({
+    fromGoogleSub: req.identity.sub,
+    fromGoogleEmail: req.identity.email,
+    toGoogleSub,
+    toGoogleEmail,
+    timeControl,
+  });
+  res.json({ challenge: toChallengeDTO(challenge) });
+});
+
+app.get("/me/challenges", requireAuth, async (req, res) => {
+  const rows = req.query.direction === "outgoing"
+    ? await listOutgoingChallenges(req.identity.sub)
+    : await listIncomingChallenges(req.identity.sub);
+  res.json({ challenges: rows.map(toChallengeDTO) });
+});
+
+// Accept reuses the existing room-code join machinery (rooms.js's
+// reserveRoom) rather than building a second one — the accepting and
+// challenging users both end up joining this room exactly the way anyone
+// joins a shared room-code link (see FriendLobby's initialRoomCode).
+app.post("/challenges/:id/accept", requireAuth, async (req, res) => {
+  const challenge = await getChallenge(req.params.id);
+  if (!challenge || challenge.to_google_sub !== req.identity.sub || challenge.status !== "pending") {
+    return res.status(404).json({ error: "Challenge not found or not actionable." });
+  }
+  const room = reserveRoom({
+    fromSub: challenge.from_google_sub,
+    fromEmail: challenge.from_google_email,
+    toSub: challenge.to_google_sub,
+    toEmail: challenge.to_google_email,
+  });
+  const updated = await acceptChallenge({ id: challenge.id, roomCode: room.code });
+  res.json({ challenge: toChallengeDTO(updated) });
+});
+
+app.post("/challenges/:id/decline", requireAuth, async (req, res) => {
+  const challenge = await getChallenge(req.params.id);
+  if (!challenge || challenge.to_google_sub !== req.identity.sub || challenge.status !== "pending") {
+    return res.status(404).json({ error: "Challenge not found or not actionable." });
+  }
+  const updated = await declineChallenge(challenge.id);
+  res.json({ challenge: toChallengeDTO(updated) });
+});
+
 app.patch("/games/:id", requireAuth, async (req, res) => {
   const { recap, councilReport } = req.body ?? {};
   // Both fields arrive independently and asynchronously (recap is the
@@ -156,6 +236,14 @@ io.use(async (socket, next) => {
 });
 
 registerSocketHandlers(io);
+
+// A sibling interval to rooms.js's in-memory sweep, kept separate since
+// rooms.js has no persistence layer at all today and this is a DB sweep —
+// prevents pending challenges nobody ever answered from accreting forever
+// in the "waiting on you" strip.
+setInterval(() => {
+  expireStaleChallenges().catch((err) => console.error("Failed to expire stale challenges:", err.message));
+}, EXPIRE_CHALLENGES_INTERVAL_MS).unref();
 
 const port = process.env.PORT || 8787;
 
