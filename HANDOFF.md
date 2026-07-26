@@ -6,12 +6,21 @@ post-game analysis ("the Council") once it ends. Google sign-in is
 optional; signed-in players get a persisted game history. As of
 2026-07-25 the app also has a full visual identity — "The Green Room"
 (green felt, aged cream, one rationed brass accent) — wired into every
-real screen, not just proposed.
+real screen, not just proposed. As of 2026-07-26 signed-in players also
+land on a dashboard (Learn: chess facts + a "Talk to the Council" chat,
+Play: start a game, pending challenges, rivalries, match history, plus
+restored trajectory/pattern feedback), friend-mode survives a brief
+disconnect (CM-207), and the login screen's background is a growing
+pool of curated art/photography.
 
 This document is the single source of truth for where things stand:
 what's built, what it looks like, how it's put together, and what's
-still open. Written as a stopping point — no further chat-based work is
-planned on this as of this handoff.
+still open. §§2–7 (Screens, Current status, Component list, Architecture,
+Design system, Implementation notes) describe the app as of the Era 5
+restyle (2026-07-25) and have not been re-verified line-by-line against
+the Era 6 work below — treat §1's log as the authoritative record of
+what changed most recently, and the rest of the doc as generally
+accurate but not re-audited post-Era-6.
 
 ## Play it now
 
@@ -22,10 +31,10 @@ room** → send your friend the page URL with `?room=CODE` appended (shown
 on the waiting screen) or just the code itself. They sign in, paste the
 code (or open your link, which pre-fills it), and click join.
 
-**Note:** the deployed site will not reflect the Green Room restyle
-until Vercel's next auto-deploy off `main` picks up the latest push —
-check the Vercel dashboard if the live site still looks like the old
-plain styling.
+**Note:** the deployed site reflects `main` as of `77ebf41`
+(2026-07-26) once Vercel/Render's next auto-deploy off `main` picks it
+up — this hasn't been independently re-checked post-push (§8 item 2);
+check the Vercel/Render dashboards if the live site looks behind.
 
 ---
 
@@ -127,6 +136,107 @@ Merged to `main` as **PR #2** (`e858bf8`), 2026-07-25. Both
 `design/green-room-kit` was deliberately left alone — still exists,
 still not merged (see §8).
 
+### Era 6 — Dashboard v1, rivalries/challenges, CM-207, and a rewrite (2026-07-25 to 2026-07-26, PR #4 + direct-to-`main` work)
+
+The biggest single stretch of work on this app since the MVP. Built as
+two waves on `feature/wave-2-3-frontdoor-rivalries` (merged as **PR #4**),
+then several follow-on pieces committed straight to `main`.
+
+**Wave 1 — the first real dashboard** (`b5e9e4f`…`1b30edd`, 14 phases):
+`phase: "home"` as the signed-in landing screen, replacing the setup
+screen as the front door. Built: `TrajectoryHeader` (plain-English
+recent-form sentence), `ImprovementStrip` (up to 3 recurring mistake
+patterns with sparklines, `server/patternTaxonomy.js`), a context-aware
+`PrimaryCta`, `WorthReviewing` (games worth a second look, ranked
+server-side), beginner/advanced analysis-mode switching
+(`AnalysisModeProvider`, `user_settings` table), and `ReplayBoard` +
+`BoardSurface` for ply-scrubbing a finished game's PGN. All of it reads
+from `GET /me/stats`, a pure aggregate over already-classified game
+rows — no new schema beyond `user_settings` and a `result_reason`
+column.
+
+**Wave 2/3 — rivalries, challenges, the Gemini sidecar** (`0c50307`…`c1c2e0a`,
+11 phases): a `reserveRoom`/`resolveSeatForIdentity` primitive in
+`rooms.js` so a challenge-accept can pre-seat two specific Google subs
+before either has a live socket; a new `challenges` table and REST
+routes (`POST /challenges`, `/accept`, `/decline`, `GET /me/challenges`);
+`GET /me/rivalries` as a derived query over friend-mode games
+(`computeRivalries`); a new isolated `server/gemini.js` sidecar
+(`@google/genai`) generating a "from the literature" tile alongside the
+existing Claude-based Council Report, merged concurrently and degrading
+independently if either provider is down; `evalTrack` persistence so the
+post-game eval graph (`EvalRibbon`/`RibbonBoard`) survives a page reload;
+and a full login-screen restyle (`LoginScreen.jsx`,
+`DecorativeReplayBoard.jsx`) replacing the bare sign-in button. Merged to
+`main` as **PR #4**.
+
+**Gemini literature tile, three real bugs fixed** (`585b522`, direct to
+`main` per explicit instruction): wrong model (`gemini-2.5-pro` has zero
+free-tier quota on a fresh project), a thinking-token starvation issue
+(same class of bug as the documented Sonnet 5 one in §7 — fixed with
+`thinkingConfig.thinkingBudget`), and intermittent malformed JSON output
+(fixed with `responseMimeType: "application/json"`). Verified via 8+
+consecutive successful isolated test calls plus a live end-to-end check.
+
+**CM-207 — 60-second disconnect grace** (`f005296`, `5518a0e`, `25928dc`,
+3 phases, merged to `main` `ce6e13b`): the item flagged as open in §8
+below is now done. A socket disconnect in friend mode no longer ends the
+game instantly — the room survives 60s (`armDisconnectGrace`/
+`disarmDisconnectGrace` in `rooms.js`), both clients see a
+`DisconnectBanner` countdown, a reconnect inside the window resyncs the
+board via the existing `boardState` event and clears the banner, and
+only the server declares the auto-resignation if the window elapses
+(`getGameOverReason`'s new `disconnectedBy` case). Scoped deliberately
+narrow: disconnect/reconnect while the tab stays open, not a full-reload
+recovery (state lives in server memory, not Postgres) — both boundaries
+stated explicitly in the plan, not silently assumed. The spec's "pause
+the disconnected player's clock" requirement was dropped by informed
+choice — friend mode has no clock at all, confirmed by direct code
+inspection, and building one was explicitly out of scope for this
+ticket.
+
+**Login screen: drop-in backgrounds folder** (`afe3184`, `5a2765a`,
+merged `400b68b`): `src/assets/login-backgrounds/` + a build-time glob
+loader (`src/lib/loginBackgrounds.js`) — drop a static image or short
+video loop in the folder and it joins the same random-pick pool as the
+existing live decorative chess replay, no code change needed. First 10
+images added (sourced from cdn.cosmos.so), screened before inclusion —
+one skipped for a visible third-party watermark, one duplicate URL
+skipped, one animated GIF recompressed 9.9MB → 2.4MB (halved frame
+count, resized) since it was too heavy to ship as-is.
+
+**`version-updates/chess-3d-engine/` scaffolded** (`e8c356d`): a new,
+still-unbuilt module for a Three.js/orthographic-camera/GLTF-piece 3D
+board renderer, generated with Gemini's help. Scaffold only — a
+placeholder spinning cube proves the render loop/camera/dev server work;
+waiting on the real scene/camera/model-loading files.
+
+**Dashboard rewrite: learn/play split** (`d7640fe`, merged `2c2e23d`):
+the Wave 1 dashboard was judged "boring" for a brand-new user — every
+zone reads empty with no game history. Replaced entirely with two
+sections: **Learn** (`LearnAboutChess.jsx` — a curated chess-facts card,
+`src/lib/chessFacts.js` — and `TalkToCouncil.jsx`, a general chess Q&A
+chatbot backed by a new `server/instructiveGames.js` curated-example
+library, falling back to it when the asking user has no game history of
+their own yet) and **Play** (start a game, pending challenges, match
+history — unchanged capability, just recomposed). The `/me/stats` and
+`/me/rivalries` endpoints and `server/stats.js` were deliberately left
+running, dormant — not deleted, just disconnected from the UI.
+
+**Dashboard nav + the dormant zones revived** (`77ebf41`, direct to
+`main`): a persistent "← Dashboard" button, visible on every screen once
+signed in (bot setup, an in-progress game, the friend lobby — none of
+which previously had a way back except finishing a game). And the
+Wave-1 zones dropped by the learn/play rewrite — `TrajectoryHeader`,
+`ImprovementStrip`, `RivalriesRow`, `WorthReviewing` — restored from git
+history and reconnected to the endpoints that were kept alive for
+exactly this: trajectory/patterns/worth-reviewing joined "Learn"
+(self-improvement feedback), rivalries joined "Play" (social/functional).
+The dashboard is comprehensive again without losing the empty-state
+handling that motivated the rewrite in the first place — every restored
+zone still renders nothing until there's enough history to say something
+real.
+
 ---
 
 ## 2. Screens
@@ -170,15 +280,23 @@ has no router — it's a single-page conditional-render state machine
 | Play a friend (real-time multiplayer) | ✅ Built, verified via simulated identities + local browser tabs — **not yet verified with two real humans on the live site since the restyle** |
 | Live commentary (pings + recap), both modes | ✅ Built, wired, verified live |
 | 5-persona Council Report, both modes | ✅ Built and verified; report styling re-verified after the restyle via DOM injection (no LLM backend running in the restyle session) |
-| Deployment (GitHub → Vercel + Render, Neon DB, CORS, Google OAuth) | ✅ Done, verified live — restyled `main` not yet auto-deployed as of this writing, check Vercel |
+| Deployment (GitHub → Vercel + Render, Neon DB, CORS, Google OAuth) | ✅ Done, verified live as of the Era 5 restyle — **not independently re-checked against Era 6's later pushes; confirm Vercel/Render picked up `77ebf41`** |
 | Cycle 2 P0/P1 (CM-201 through CM-206, CM-208) | ✅ Done, merged (PR #1) |
-| Cycle 2 P2 (CM-207, disconnect grace) | ⏳ Scoped in the PRD, never started |
+| Cycle 2 P2 (CM-207, disconnect grace) | ✅ Done (Era 6) — 60s grace, reconnect, server-declared auto-resign. Untimed friend mode by design; not persisted across a full server restart (see Era 6 for the stated boundaries) |
 | Green Room UX kit (`version-updates/chess-app-ui-ux/`) | ✅ Fully built, 8 milestones, on `design/green-room-kit` — **not merged, kept as reference only** |
 | Green Room restyle of the live app | ✅ Done, merged (PR #2) — see §6 for known gaps |
+| Dashboard (Wave 1 → learn/play rewrite → nav + zones restored) | ✅ Done (Era 6) — see Era 6 for the full arc; current shape is Learn (facts, council chat, trajectory, patterns, worth-reviewing) + Play (challenges, rivalries, start game, history) |
+| Rivalries + challenge object (Wave 2/3) | ✅ Done, merged (PR #4) |
+| Gemini literature sidecar | ✅ Done, three real bugs fixed post-merge (Era 6) |
+| Login screen drop-in backgrounds | ✅ Done (Era 6) — 10 images in `src/assets/login-backgrounds/`, folder built to keep growing |
+| `version-updates/chess-3d-engine/` | ⏳ Scaffolded only (Era 6) — waiting on real scene/camera/model files |
 
 **Open items**, in priority order — see §8 for detail: (1) a real
-two-human live playthrough post-restyle, (2) CM-207, (3) a decision on
-what to do with the now-orphaned `design/green-room-kit` branch.
+two-human live playthrough (still never done, now also covering CM-207's
+acceptance criteria), (2) confirm Vercel/Render actually deployed Era 6's
+pushes, (3) `chess-3d-engine`'s real implementation once the fed-in files
+arrive, (4) a decision on what to do with the now-orphaned
+`design/green-room-kit` branch.
 
 ---
 
@@ -458,21 +576,27 @@ restyle's own commit messages)
 
 ## 8. Open items / what's next
 
-1. **A real two-human live playthrough, post-restyle.** Sign in as two
-   different Google accounts in two real tabs on the deployed site,
-   play a full friend game including a capture/check, reach checkmate
-   or resign, confirm both dashboards show the game with the correct
-   opponent, the Council Report renders for both, and each can ask
-   their own follow-up question. Needs a real second Google account,
-   which is why it's never been done from an automated browser — every
-   verification so far (including all of the RESTYLE work) used
-   simulated identities, local tabs, or DOM injection instead.
-2. **CM-207 — 60-second disconnect grace.** Scoped in
-   `docs/CHESS_MVP_PRD_CYCLE_2.md`, never started. Needs
-   server-authoritative room state to survive a brief disconnect
-   without immediately forfeiting the game — ties directly into the
-   "no reconnect mechanism" gap noted in §7.
-3. **`design/green-room-kit` branch's fate.** It's fully built (8
+1. **A real two-human live playthrough.** Sign in as two different
+   Google accounts in two real tabs on the deployed site, play a full
+   friend game including a capture/check, reach checkmate or resign,
+   confirm both dashboards show the game with the correct opponent, the
+   Council Report renders for both, each can ask their own follow-up
+   question — and now also CM-207's own acceptance criteria (kill one
+   client's network for 30s, confirm resume; kill it for 65s, confirm
+   the server declares the resignation). Needs a real second Google
+   account, which is why it's never been done from an automated browser
+   — every verification so far, across every era including CM-207's own,
+   has used simulated identities, local tabs, or DOM injection instead.
+   This is the single most load-bearing gap in this doc.
+2. **Vercel/Render deploy check.** Confirm both the frontend and backend
+   actually picked up Era 6's pushes (last confirmed push: `77ebf41`) —
+   auto-deploy on push is configured for both, but hasn't been
+   independently re-checked since the PR #2 merge.
+3. **`chess-3d-engine`'s real implementation.** Scaffolded only (Era
+   6) — waiting on the actual scene/camera/model-loading files plus the
+   Gemini `.md` spec describing the piece-generation approach.
+   Independent of core; no risk to the live game either way.
+4. **`design/green-room-kit` branch's fate.** It's fully built (8
    milestones, live-verified, has its own README) but was deliberately
    never merged — it was reference material for the restyle, not a
    thing meant to ship on its own. Decide: delete it (the design
@@ -480,10 +604,14 @@ restyle's own commit messages)
    above), keep it parked as living reference documentation, or merge
    it in as-is for historical record. No action taken either way as of
    this handoff.
-4. **Vercel deploy check.** Confirm the live site actually picked up
-   `main`'s latest push (`e858bf8`) — Vercel auto-deploys on push, but
-   this wasn't independently confirmed after the PR #2 merge.
-5. **Font hosting.** Fraunces + Instrument Sans currently load from the
+5. **CM-207's stated boundaries, if they ever stop being acceptable.**
+   Room state lives in server memory, not Postgres — a full server
+   restart mid-game still loses the room, same as every other in-flight
+   game before this ticket. A full-page-reload recovery (not just a
+   socket drop) is also out of scope as shipped. Both were explicit,
+   stated tradeoffs, not oversights — revisit only if real usage makes
+   either one actually bite.
+6. **Font hosting.** Fraunces + Instrument Sans currently load from the
    Google Fonts CDN (a third-party request on every page load) — fine
    for now, flagged as a "revisit if it ever matters" item, not a
    blocker.
