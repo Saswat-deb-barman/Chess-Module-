@@ -4,6 +4,7 @@ import Board from "./components/Board.jsx";
 import FriendLobby from "./components/FriendLobby.jsx";
 import MultiplayerBoard from "./components/MultiplayerBoard.jsx";
 import SignInButton from "./components/SignInButton.jsx";
+import LoginScreen from "./components/LoginScreen.jsx";
 import GameHistory from "./components/GameHistory.jsx";
 import AnalysisModeChooser from "./components/AnalysisModeChooser.jsx";
 import Dashboard from "./components/Dashboard.jsx";
@@ -131,14 +132,14 @@ export default function App() {
   const modeGateLoading = enabled && user && modeLoading;
   const showModeChooser = enabled && user && !modeLoading && mode === null;
 
+  if (!canPlay) return <LoginScreen />;
+
   return (
     <main className="app">
       <SignInButton />
       <h1>Chess by Alchemist</h1>
 
-      {!canPlay ? (
-        <p className="landing-message">Sign in with Google to play.</p>
-      ) : modeGateLoading ? null : showModeChooser ? (
+      {modeGateLoading ? null : showModeChooser ? (
         <AnalysisModeChooser />
       ) : phase === "home" ? (
         <Dashboard

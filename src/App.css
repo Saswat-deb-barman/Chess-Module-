@@ -20,10 +20,188 @@ body {
   text-align: center;
 }
 
-.landing-message {
-  margin-top: 24px;
+/* ===== Login screen (LOGIN_SPEC_V1) — the front door for a signed-out
+   visitor when real Google auth is configured. Full-bleed, escapes
+   .app's centered/padded box entirely via position:fixed. ===== */
+.login-screen {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  text-align: left;
+  background: var(--felt-950);
+}
+
+.login-screen-board-layer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  z-index: 0;
+}
+
+/* The board is a fixed square; centering an oversized copy of it and
+   letting the layer's overflow:hidden clip the shorter axis approximates
+   object-fit:cover for what is otherwise a 1:1 asset in a non-1:1 frame. */
+.login-screen-board-inner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.login-screen-board-inner .board-wrap {
+  width: max(100vw, 100vh);
+  max-width: none;
+  margin: 0;
+  box-shadow: none;
+  border-radius: 0;
+}
+
+/* Left-heavy scrim: near-opaque where the card sits, clearing toward the
+   right so the board reads through. Heavier than a photo would need — a
+   rendered board is high-contrast and moving, so card legibility must
+   win (LOGIN_SPEC_V1 §2). */
+.login-screen-scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(
+    100deg,
+    var(--felt-950) 0%,
+    rgba(8, 17, 13, 0.94) 32%,
+    rgba(8, 17, 13, 0.6) 55%,
+    rgba(8, 17, 13, 0.15) 78%,
+    transparent 100%
+  );
+}
+
+.login-screen-vignette {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: radial-gradient(ellipse at 30% 45%, rgba(0, 0, 0, 0.35), transparent 65%);
+}
+
+.login-screen-content {
+  position: relative;
+  z-index: 2;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: var(--s-7) var(--s-6);
+}
+
+.login-screen-brand {
+  position: absolute;
+  top: var(--s-6);
+  left: var(--s-6);
+  font-family: var(--font-display);
+  font-weight: 650;
+  font-size: var(--t-h2);
+  color: var(--paper-50);
+}
+
+.login-screen-brand-sub {
+  font-family: var(--font-ui);
+  font-weight: 600;
+  font-size: var(--t-micro);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--brass-300);
+  margin-left: var(--s-2);
+}
+
+.login-screen-card {
+  max-width: 420px;
+  background: rgba(14, 27, 21, 0.72);
+  border: 1px solid var(--line-1);
+  border-radius: var(--r-lg);
+  padding: var(--s-6);
+  box-shadow: var(--e-3);
+  backdrop-filter: blur(2px);
+}
+
+.login-screen-kicker {
+  font-size: var(--t-micro);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--brass-500);
+  font-weight: 600;
+  margin: 0 0 var(--s-3);
+}
+
+.login-screen-headline {
+  font-family: var(--font-display);
+  font-weight: 650;
+  font-size: var(--t-h1);
+  line-height: 1.15;
+  color: var(--paper-50);
+  margin: 0 0 var(--s-4);
+}
+
+.login-screen-headline em {
+  font-style: italic;
+  color: var(--brass-300);
+}
+
+.login-screen-dek {
+  font-size: var(--t-body);
+  line-height: 1.55;
   color: var(--paper-300);
-  font-size: 0.95rem;
+  margin: 0 0 var(--s-5);
+}
+
+.login-screen-signin {
+  margin-bottom: var(--s-3);
+}
+
+.login-screen-fineprint {
+  font-size: var(--t-small);
+  color: var(--paper-500);
+  margin: 0;
+}
+
+.login-screen-pullquote {
+  position: absolute;
+  right: var(--s-6);
+  bottom: var(--s-6);
+  max-width: 340px;
+  text-align: right;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: var(--t-h3);
+  color: var(--paper-100);
+  line-height: 1.4;
+}
+
+.login-screen-pullquote-attr {
+  display: block;
+  margin-top: var(--s-2);
+  font-family: var(--font-ui);
+  font-style: normal;
+  font-size: var(--t-small);
+  color: var(--paper-500);
+}
+
+@media (max-width: 720px) {
+  .login-screen-scrim {
+    background: rgba(8, 17, 13, 0.82);
+  }
+  .login-screen-content {
+    justify-content: center;
+    align-items: center;
+    padding: var(--s-6) var(--s-4);
+  }
+  .login-screen-brand {
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  .login-screen-card {
+    text-align: center;
+  }
+  .login-screen-pullquote {
+    display: none;
+  }
 }
 
 .analysis-mode-chooser {
