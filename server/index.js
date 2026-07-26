@@ -3,8 +3,9 @@ import { createServer } from "http";
 import express from "express";
 import cors from "cors";
 import { Server } from "socket.io";
-import { getPing, getRecap, getCouncilReport, answerQuestion } from "./council.js";
+import { getPing, getRecap, getCouncilReport, answerQuestion, chatWithCouncil } from "./council.js";
 import { getLiteratureTile } from "./gemini.js";
+import { INSTRUCTIVE_GAMES } from "./instructiveGames.js";
 import {
   migrate,
   saveGame,
@@ -225,6 +226,22 @@ app.post("/games/:id/ask", requireAuth, async (req, res) => {
   // through to "w" there — the human is always White in that mode.
   const askingColor = game.black_google_sub === req.identity.sub ? "b" : "w";
   const answer = await answerQuestion({ pgn: game.pgn, recap: game.recap, question, askingColor });
+  res.json({ answer });
+});
+
+// "Talk to the Council" dashboard chat — not tied to one specific game.
+// Prefers the asker's own recent games as teaching material once they
+// have any; falls back to the curated INSTRUCTIVE_GAMES library for a
+// brand-new user with zero game history, per the dashboard rewrite's
+// "works from day zero" requirement.
+app.post("/council/chat", requireAuth, async (req, res) => {
+  const { question } = req.body ?? {};
+  if (!question) return res.status(400).json({ answer: null });
+  const ownGames = await listGames(req.identity.sub);
+  const games = ownGames.length
+    ? ownGames.slice(0, 2).map((g) => ({ pgn: g.pgn, label: `your game vs ${g.black}` }))
+    : INSTRUCTIVE_GAMES.slice(0, 2).map((g) => ({ pgn: g.pgn, label: g.concept }));
+  const answer = await chatWithCouncil({ question, games });
   res.json({ answer });
 });
 
