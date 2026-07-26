@@ -56,6 +56,18 @@ body {
   border-radius: 0;
 }
 
+/* A static/video background pulled from src/assets/login-backgrounds/ —
+   sits in the same layer as the decorative board, sized to cover rather
+   than the board's oversized-square approximation, since these can be
+   any aspect ratio. */
+.login-screen-media {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 /* Left-heavy scrim: near-opaque where the card sits, clearing toward the
    right so the board reads through. Heavier than a photo would need — a
    rendered board is high-contrast and moving, so card legibility must

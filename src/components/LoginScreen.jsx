@@ -2,7 +2,17 @@ import { useMemo } from "react";
 import { GoogleLogin } from "@react-oauth/google";
 import { useAuth } from "../lib/auth.jsx";
 import { pickLoginReplay } from "../lib/loginReplays.js";
+import { listLoginBackgrounds } from "../lib/loginBackgrounds.js";
 import DecorativeReplayBoard from "./chess/DecorativeReplayBoard.jsx";
+
+// Picked once per mount, alongside the replay PGN below — the live board
+// is always in the pool as its own entry, so an empty
+// src/assets/login-backgrounds/ folder means this always resolves to the
+// board, exactly LoginScreen's behavior before that folder existed.
+function pickBackground(replayPgn) {
+  const pool = [{ type: "board", pgn: replayPgn }, ...listLoginBackgrounds()];
+  return pool[Math.floor(Math.random() * pool.length)];
+}
 
 /**
  * The front door (LOGIN_SPEC_V1) — the real screen for the cold invited
@@ -22,13 +32,20 @@ export default function LoginScreen() {
   // Picked once per mount, not on every render — a re-render mid-visit
   // shouldn't yank the board to a different game.
   const replayPgn = useMemo(() => pickLoginReplay(), []);
+  const background = useMemo(() => pickBackground(replayPgn), [replayPgn]);
 
   return (
     <div className="login-screen">
       <div className="login-screen-board-layer">
-        <div className="login-screen-board-inner">
-          <DecorativeReplayBoard pgn={replayPgn} />
-        </div>
+        {background.type === "board" && (
+          <div className="login-screen-board-inner">
+            <DecorativeReplayBoard pgn={background.pgn} />
+          </div>
+        )}
+        {background.type === "image" && <img className="login-screen-media" src={background.url} alt="" />}
+        {background.type === "video" && (
+          <video className="login-screen-media" src={background.url} autoPlay loop muted playsInline />
+        )}
       </div>
       <div className="login-screen-scrim" />
       <div className="login-screen-vignette" />
