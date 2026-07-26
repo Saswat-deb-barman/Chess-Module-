@@ -73,6 +73,7 @@ export default function Board({ difficulty, onGameEnd, onRecap, onCouncilReport 
   const [councilMessages, setCouncilMessages] = useState([]);
   const [recap, setRecap] = useState(null);
   const [definingMoves, setDefiningMoves] = useState([]);
+  const [evalTrack, setEvalTrack] = useState([]);
   const [councilReport, setCouncilReport] = useState(null);
   const [councilAnalyzing, setCouncilAnalyzing] = useState(false);
 
@@ -126,14 +127,15 @@ export default function Board({ difficulty, onGameEnd, onRecap, onCouncilReport 
       if (!engineRef.current) return;
       setCouncilAnalyzing(true);
       try {
-        const { definingMoves: flagged } = await analyzeGame(finishedPgn, engineRef.current, { depth: 12 });
+        const { definingMoves: flagged, evalTrack: track } = await analyzeGame(finishedPgn, engineRef.current, { depth: 12 });
         if (unmountedRef.current) return;
         setDefiningMoves(flagged);
+        setEvalTrack(track);
 
         const report = await reportCouncil({ pgn: finishedPgn, result: resultTag, definingMoves: flagged });
         if (unmountedRef.current) return;
         if (report) setCouncilReport(report);
-        onCouncilReport?.({ definingMoves: flagged, report });
+        onCouncilReport?.({ definingMoves: flagged, evalTrack: track, report });
       } finally {
         if (!unmountedRef.current) setCouncilAnalyzing(false);
       }
@@ -316,9 +318,21 @@ export default function Board({ difficulty, onGameEnd, onRecap, onCouncilReport 
       />
       <CouncilPanel messages={councilMessages} recap={recap} />
       {status && ((analysisMode ?? "beginner") === "beginner" ? (
-        <CouncilReportBento pgn={pgn} definingMoves={definingMoves} report={councilReport} loading={councilAnalyzing} />
+        <CouncilReportBento
+          pgn={pgn}
+          definingMoves={definingMoves}
+          evalTrack={evalTrack}
+          report={councilReport}
+          loading={councilAnalyzing}
+        />
       ) : (
-        <CouncilReport definingMoves={definingMoves} report={councilReport} loading={councilAnalyzing} />
+        <CouncilReport
+          pgn={pgn}
+          definingMoves={definingMoves}
+          evalTrack={evalTrack}
+          report={councilReport}
+          loading={councilAnalyzing}
+        />
       ))}
     </div>
   );

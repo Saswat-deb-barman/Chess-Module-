@@ -191,7 +191,7 @@ export function registerSocketHandlers(io) {
     // (free, client-side) but the LLM call + persistence, so that's the
     // only piece guarded against duplication, same class of fix
     // Milestone 6 already applied to the simple recap.
-    socket.on("submitDefiningMoves", async (definingMoves) => {
+    socket.on("submitDefiningMoves", async ({ definingMoves, evalTrack } = {}) => {
       const room = findRoomBySocketId(socket.id);
       if (!room || !room.ended || room.reportRequested) return;
       room.reportRequested = true;
@@ -205,14 +205,14 @@ export function registerSocketHandlers(io) {
       // game can still surface Gemini's literature tile and vice versa;
       // only collapses to a true null when BOTH came back empty.
       const mergedReport = report || literature ? { ...report, literature } : null;
-      io.to(room.code).emit("councilReport", { definingMoves, report: mergedReport });
+      io.to(room.code).emit("councilReport", { definingMoves, evalTrack, report: mergedReport });
 
       if (!room.savedGameId) return;
       try {
         await updateGameCouncilReport({
           googleSub: room.viewerSub,
           gameId: room.savedGameId,
-          councilReport: { definingMoves, report: mergedReport },
+          councilReport: { definingMoves, evalTrack, report: mergedReport },
         });
       } catch (err) {
         console.error("Failed to attach council report to friend game:", err.message);

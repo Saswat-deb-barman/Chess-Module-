@@ -104,13 +104,16 @@ export default function App() {
   // patch, same fire-and-forget shape as handleRecap. `report` can be
   // null (LLM call failed soft); still worth persisting definingMoves
   // alone so the move timeline shows up even without persona narration.
-  function handleCouncilReport({ definingMoves, report }) {
+  function handleCouncilReport({ definingMoves, evalTrack, report }) {
     if (savedGameId && user && idToken) {
-      updateGameCouncilReport(idToken, savedGameId, { definingMoves, report }, { onUnauthorized: signOut }).then(
-        (updated) => {
-          if (updated) setHistoryRefreshKey((k) => k + 1);
-        }
-      );
+      updateGameCouncilReport(
+        idToken,
+        savedGameId,
+        { definingMoves, evalTrack, report },
+        { onUnauthorized: signOut }
+      ).then((updated) => {
+        if (updated) setHistoryRefreshKey((k) => k + 1);
+      });
     }
   }
 

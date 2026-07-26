@@ -83,12 +83,15 @@ function GameRow({ game, viewerSub }) {
               <CouncilReportBento
                 pgn={game.pgn}
                 definingMoves={game.council_report.definingMoves ?? []}
+                evalTrack={game.council_report.evalTrack}
                 report={game.council_report.report ?? null}
                 patterns={game.patterns ?? []}
               />
             ) : (
               <CouncilReport
+                pgn={game.pgn}
                 definingMoves={game.council_report.definingMoves ?? []}
+                evalTrack={game.council_report.evalTrack}
                 report={game.council_report.report ?? null}
               />
             ))}
