@@ -13,6 +13,7 @@ import {
 import { tryMove, getGameOverReason, getResultTag, detectMoment, toFen, toPgn } from "./gameEngine.js";
 import { saveGame, updateGameRecap, updateGameCouncilReport } from "./db.js";
 import { getPing, getRecap, getCouncilReport } from "./council.js";
+import { getLiteratureTile } from "./gemini.js";
 
 /**
  * Milestone 3: the server now holds the authoritative chess.js instance
@@ -195,15 +196,23 @@ export function registerSocketHandlers(io) {
       if (!room || !room.ended || room.reportRequested) return;
       room.reportRequested = true;
 
-      const report = await getCouncilReport({ pgn: toPgn(room.game), result: room.finishedResult, definingMoves });
-      io.to(room.code).emit("councilReport", { definingMoves, report });
+      const pgn = toPgn(room.game);
+      const [report, literature] = await Promise.all([
+        getCouncilReport({ pgn, result: room.finishedResult, definingMoves }),
+        getLiteratureTile({ pgn, definingMoves }),
+      ]);
+      // Each provider's absence degrades independently — a Claude-down
+      // game can still surface Gemini's literature tile and vice versa;
+      // only collapses to a true null when BOTH came back empty.
+      const mergedReport = report || literature ? { ...report, literature } : null;
+      io.to(room.code).emit("councilReport", { definingMoves, report: mergedReport });
 
       if (!room.savedGameId) return;
       try {
         await updateGameCouncilReport({
           googleSub: room.viewerSub,
           gameId: room.savedGameId,
-          councilReport: { definingMoves, report },
+          councilReport: { definingMoves, report: mergedReport },
         });
       } catch (err) {
         console.error("Failed to attach council report to friend game:", err.message);

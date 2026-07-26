@@ -4,6 +4,7 @@ import express from "express";
 import cors from "cors";
 import { Server } from "socket.io";
 import { getPing, getRecap, getCouncilReport, answerQuestion } from "./council.js";
+import { getLiteratureTile } from "./gemini.js";
 import {
   migrate,
   saveGame,
@@ -72,8 +73,15 @@ app.post("/council/recap", async (req, res) => {
 // narration layer on top of that objective data.
 app.post("/council/report", async (req, res) => {
   const { pgn, result, definingMoves } = req.body ?? {};
-  const report = await getCouncilReport({ pgn, result, definingMoves });
-  res.json({ report });
+  const [report, literature] = await Promise.all([
+    getCouncilReport({ pgn, result, definingMoves }),
+    getLiteratureTile({ pgn, definingMoves }),
+  ]);
+  // Each provider's absence degrades independently — see the matching
+  // comment in socket.js's submitDefiningMoves handler (the friend-mode
+  // equivalent of this endpoint).
+  const mergedReport = report || literature ? { ...report, literature } : null;
+  res.json({ report: mergedReport });
 });
 
 app.post("/games", requireAuth, async (req, res) => {
@@ -254,6 +262,9 @@ migrate()
       console.log(`Council server listening on http://localhost:${port}`);
       if (!process.env.ANTHROPIC_API_KEY) {
         console.log("No ANTHROPIC_API_KEY set — council endpoints will respond with null messages.");
+      }
+      if (!process.env.GEMINI_API_KEY) {
+        console.log("No GEMINI_API_KEY set — the literature tile will stay silent.");
       }
       if (!process.env.DATABASE_URL) {
         console.log("No DATABASE_URL set — /games endpoints will respond with empty/null data.");
