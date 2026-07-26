@@ -1,7 +1,10 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../lib/auth.jsx";
+import { useAnalysisMode } from "../lib/analysisMode.jsx";
 import { listGames, askAboutGame } from "../lib/games.js";
 import CouncilReport from "./CouncilReport.jsx";
+import CouncilReportBento from "./CouncilReportBento.jsx";
+import ReplayBoard from "./chess/ReplayBoard.jsx";
 
 function GameChat({ gameId }) {
   const { idToken, signOut } = useAuth();
@@ -48,13 +51,14 @@ function GameChat({ gameId }) {
 // mode. In a friend game the viewer could be either color, so "the
 // opponent" has to be derived by checking which seat's sub matches the
 // signed-in viewer, not assumed to always be game.black.
-function opponentLabel(game, viewerSub) {
+export function opponentLabel(game, viewerSub) {
   if (viewerSub && game.black_google_sub === viewerSub) return game.white;
   return game.black;
 }
 
 function GameRow({ game, viewerSub }) {
   const [expanded, setExpanded] = useState(false);
+  const { mode: analysisMode } = useAnalysisMode();
 
   return (
     <li className="game-history-row">
@@ -72,13 +76,22 @@ function GameRow({ game, viewerSub }) {
           ) : (
             <p className="game-history-recap game-history-recap-empty">No analysis available for this game.</p>
           )}
+          {(analysisMode ?? "beginner") !== "beginner" && <ReplayBoard pgn={game.pgn} />}
           <pre className="pgn-box">{game.pgn}</pre>
-          {game.council_report && (
-            <CouncilReport
-              definingMoves={game.council_report.definingMoves ?? []}
-              report={game.council_report.report ?? null}
-            />
-          )}
+          {game.council_report &&
+            ((analysisMode ?? "beginner") === "beginner" ? (
+              <CouncilReportBento
+                pgn={game.pgn}
+                definingMoves={game.council_report.definingMoves ?? []}
+                report={game.council_report.report ?? null}
+                patterns={game.patterns ?? []}
+              />
+            ) : (
+              <CouncilReport
+                definingMoves={game.council_report.definingMoves ?? []}
+                report={game.council_report.report ?? null}
+              />
+            ))}
           <GameChat gameId={game.id} />
         </div>
       )}

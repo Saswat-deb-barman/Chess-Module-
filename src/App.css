@@ -26,6 +26,30 @@ body {
   font-size: 0.95rem;
 }
 
+.analysis-mode-chooser {
+  margin-top: 24px;
+}
+
+.analysis-mode-chooser h2 {
+  font-family: var(--font-display);
+  font-weight: 650;
+  font-size: var(--t-h2);
+  color: var(--paper-50);
+  margin: 0 0 8px;
+}
+
+.analysis-mode-chooser-sub {
+  color: var(--paper-300);
+  font-size: 0.9rem;
+  margin: 0 0 20px;
+}
+
+.analysis-mode-chooser-options {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
 h1 {
   font-family: var(--font-display);
   font-weight: 650;
@@ -362,6 +386,210 @@ h1 {
   background: var(--brass-300);
 }
 
+.dashboard {
+  margin-top: 16px;
+  text-align: left;
+}
+
+.primary-cta {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.primary-cta-button {
+  min-width: 220px;
+}
+
+.primary-cta-sub {
+  margin: 8px 0 0;
+  font-size: 0.75rem;
+  color: var(--paper-500);
+}
+
+.primary-cta-secondary {
+  display: block;
+  margin: 10px auto 0;
+  padding: 4px 10px;
+  border: none;
+  background: transparent;
+  color: var(--paper-500);
+  font-size: 0.8rem;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.primary-cta-secondary:hover {
+  color: var(--paper-300);
+}
+
+.trajectory-header {
+  margin-bottom: 16px;
+}
+
+.trajectory-header p {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: var(--paper-100);
+}
+
+.trajectory-header--loading p,
+.trajectory-header--onboarding p {
+  color: var(--paper-500);
+  font-style: italic;
+}
+
+.improvement-strip {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  margin-bottom: 20px;
+}
+
+.improvement-card {
+  flex: 0 0 auto;
+  min-width: 140px;
+  background: var(--felt-900);
+  border: 1px solid var(--line-1);
+  border-radius: var(--r-sm);
+  padding: 12px 14px;
+}
+
+.improvement-card-label {
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+  color: var(--paper-100);
+  font-weight: 600;
+}
+
+.improvement-card .sparkline polyline {
+  stroke: var(--paper-500);
+}
+
+.improvement-card-trend {
+  margin: 8px 0 10px;
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.improvement-card-trend--down {
+  color: var(--win);
+}
+
+.improvement-card-trend--up {
+  color: var(--loss);
+}
+
+.improvement-card-trend--flat {
+  color: var(--paper-500);
+}
+
+.improvement-card-drill {
+  padding: 4px 12px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line-1);
+  background: transparent;
+  color: var(--brass-300);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease);
+}
+
+.improvement-card-drill:hover {
+  background: var(--felt-800);
+}
+
+.worth-reviewing {
+  margin-bottom: 20px;
+}
+
+.worth-reviewing h3 {
+  font-size: 0.85rem;
+  color: var(--paper-500);
+  margin-bottom: 8px;
+}
+
+.worth-reviewing ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.worth-reviewing-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: var(--felt-900);
+  border: 1px solid var(--line-1);
+  border-radius: var(--r-sm);
+}
+
+.worth-reviewing-meta {
+  flex: 1;
+  font-size: 0.85rem;
+  color: var(--paper-100);
+}
+
+.worth-reviewing-why {
+  font-size: 0.75rem;
+  color: var(--loss);
+}
+
+.worth-reviewing-review {
+  padding: 3px 10px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line-1);
+  background: transparent;
+  color: var(--brass-300);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease);
+}
+
+.worth-reviewing-review:hover {
+  background: var(--felt-800);
+}
+
+.dashboard-drill {
+  margin-bottom: 20px;
+  padding: 14px;
+  background: var(--felt-900);
+  border: 1px solid var(--brass-700);
+  border-radius: var(--r-sm);
+}
+
+.dashboard-drill-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.dashboard-drill-title {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--brass-300);
+  font-weight: 600;
+}
+
+.dashboard-drill-close {
+  padding: 3px 10px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line-1);
+  background: transparent;
+  color: var(--paper-300);
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.dashboard-drill-close:hover {
+  background: var(--felt-800);
+}
+
 .board-screen {
   margin-top: 16px;
 }
@@ -526,6 +754,28 @@ h1 {
 
 .board-wrap--active-turn {
   box-shadow: 0 0 0 6px var(--sq-frame), 0 0 0 8px var(--brass-500), var(--e-3);
+}
+
+/* Decorative boards (match-history replay today, a future login front
+   door) are ambient, not interactive — the only motion is whatever
+   drives the ply forward, and reduced-motion should freeze that, not
+   just this wrapper's own (already-cheap) box-shadow transition. */
+@media (prefers-reduced-motion: reduce) {
+  .board-wrap--decorative {
+    transition: none;
+  }
+}
+
+.replay-board {
+  max-width: 420px;
+  margin: 0 auto;
+}
+
+.replay-board-scrubber {
+  display: block;
+  width: 100%;
+  margin-top: 10px;
+  accent-color: var(--brass-500);
 }
 
 .check-toast {
@@ -782,6 +1032,60 @@ h1 {
   font-size: 0.85rem;
   color: var(--paper-500);
   font-style: italic;
+}
+
+/* ===== Beginner-mode bento (Wave 1 top band + coaches + pattern-hit) ===== */
+.council-bento {
+  margin-top: 20px;
+  text-align: left;
+}
+
+.council-bento h3 {
+  font-size: 0.85rem;
+  color: var(--paper-500);
+  margin-bottom: 6px;
+}
+
+.council-bento-hero {
+  margin: 12px 0;
+}
+
+.council-bento-hero-cap,
+.council-bento-cap {
+  font-size: var(--t-micro);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--brass-500);
+  font-weight: 600;
+  margin: 0 0 8px;
+}
+
+.council-bento-hero-caption {
+  font-family: var(--font-display);
+  font-weight: 600;
+  color: var(--paper-50);
+  margin-top: 8px;
+  text-align: center;
+}
+
+.council-bento-tile {
+  background: var(--felt-900);
+  border: 1px solid var(--line-1);
+  border-radius: var(--r-sm);
+  padding: 12px 14px;
+  margin-bottom: 12px;
+}
+
+.council-bento-tile p {
+  margin: 0;
+  color: var(--paper-100);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.council-bento-pattern {
+  background: linear-gradient(135deg, var(--felt-800), var(--felt-900));
+  border-color: var(--brass-700);
 }
 
 .defining-moves {

@@ -130,3 +130,37 @@ export function getPositionAtPly(game, plyIndex) {
   }
   return toFen(preview);
 }
+
+/**
+ * Same idea as getPositionAtPly, but for a static, finished PGN (match
+ * history, decorative login replays) rather than a live gameRef — there's
+ * no existing Chess instance to read .history() from, just a PGN string.
+ */
+export function getPositionAtPlyFromPgn(pgn, plyIndex) {
+  const game = new Chess();
+  game.loadPgn(pgn);
+  return getPositionAtPly(game, plyIndex);
+}
+
+/**
+ * The verbose move object (from/to/san/color/captured...) at a given ply
+ * in a static PGN — the council bento's board-hero needs the actual
+ * from/to squares to highlight, which the stored council_report.
+ * definingMoves entries don't carry (only san + the resulting fen).
+ */
+export function getMoveAtPly(pgn, plyIndex) {
+  const game = new Chess();
+  game.loadPgn(pgn);
+  const history = game.history({ verbose: true });
+  return history[plyIndex] ?? null;
+}
+
+/**
+ * Total ply count for a static PGN — a replay scrubber's range, since
+ * there's no live game/GameRail to read a move count from.
+ */
+export function getPlyCountFromPgn(pgn) {
+  const game = new Chess();
+  game.loadPgn(pgn);
+  return game.history().length;
+}

@@ -44,6 +44,14 @@
   --sq-check: rgba(199, 68, 64, 0.85);
   --sq-premove: rgba(147, 166, 151, 0.35);
 
+  /* ---- analysis highlight vocabulary (app-wide: replay, drills,
+     in-game captions) — new concepts, not new colors: origin reuses
+     the brass accent, good/danger reuse the existing win/loss tokens
+     so highlight semantics never drift from the rest of the app. ---- */
+  --hl-origin: var(--brass-500);
+  --hl-good: var(--win);
+  --hl-danger: var(--loss);
+
   /* ---- type ---- */
   --font-display: "Fraunces", Georgia, serif;
   --font-ui: "Instrument Sans", system-ui, sans-serif;

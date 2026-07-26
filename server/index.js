@@ -4,9 +4,20 @@ import express from "express";
 import cors from "cors";
 import { Server } from "socket.io";
 import { getPing, getRecap, getCouncilReport, answerQuestion } from "./council.js";
-import { migrate, saveGame, listGames, updateGameRecap, updateGameCouncilReport, getGame } from "./db.js";
+import {
+  migrate,
+  saveGame,
+  listGames,
+  updateGameRecap,
+  updateGameCouncilReport,
+  getGame,
+  getUserSettings,
+  setUserSettings,
+} from "./db.js";
 import { requireAuth, verifyGoogleToken } from "./auth.js";
 import { registerSocketHandlers } from "./socket.js";
+import { detectPatterns } from "./patternTaxonomy.js";
+import { computeMyStats, rankWorthReviewing } from "./stats.js";
 
 const allowedOrigins = (
   process.env.CLIENT_ORIGIN || "http://localhost:5173,https://chess-module.vercel.app"
@@ -40,7 +51,7 @@ app.post("/council/report", async (req, res) => {
 });
 
 app.post("/games", requireAuth, async (req, res) => {
-  const { white, black, difficulty, result, pgn, whiteGoogleSub, whiteGoogleEmail, blackGoogleSub, blackGoogleEmail, mode } =
+  const { white, black, difficulty, result, reason, pgn, whiteGoogleSub, whiteGoogleEmail, blackGoogleSub, blackGoogleEmail, mode } =
     req.body ?? {};
   const game = await saveGame({
     googleSub: req.identity.sub,
@@ -49,6 +60,7 @@ app.post("/games", requireAuth, async (req, res) => {
     black,
     difficulty,
     result,
+    reason,
     pgn,
     whiteGoogleSub,
     whiteGoogleEmail,
@@ -61,7 +73,23 @@ app.post("/games", requireAuth, async (req, res) => {
 
 app.get("/games", requireAuth, async (req, res) => {
   const games = await listGames(req.identity.sub);
-  res.json({ games });
+  // Attached on read, not baked into the cached council_report — so a
+  // taxonomy improvement in patternTaxonomy.js applies retroactively to
+  // every historical game without regenerating anything.
+  const withPatterns = games.map((g) => ({ ...g, patterns: detectPatterns(g, req.identity.sub) }));
+  // "Worth reviewing" is a ranking mode over this same result set, not a
+  // separate query — see server/stats.js's rankWorthReviewing.
+  const result = req.query.worthReviewing ? rankWorthReviewing(withPatterns, req.identity.sub) : withPatterns;
+  res.json({ games: result });
+});
+
+// Wave 1: pure aggregate over already-classified game rows — no new
+// schema, no model calls. See server/stats.js for the ranking/trend
+// logic and server/patternTaxonomy.js for what a "pattern" is.
+app.get("/me/stats", requireAuth, async (req, res) => {
+  const games = await listGames(req.identity.sub);
+  const stats = computeMyStats(games, req.identity.sub);
+  res.json(stats);
 });
 
 app.patch("/games/:id", requireAuth, async (req, res) => {
@@ -75,6 +103,21 @@ app.patch("/games/:id", requireAuth, async (req, res) => {
     ? await updateGameRecap({ googleSub: req.identity.sub, gameId: req.params.id, recap })
     : await updateGameCouncilReport({ googleSub: req.identity.sub, gameId: req.params.id, councilReport });
   res.json({ game });
+});
+
+// Wave 1: the beginner/advanced analysis-mode preference. null means
+// "unset" — the frontend's onboarding chooser uses that to decide
+// whether to show itself; the "beginner" default is applied only where
+// the value is actually consumed (report rendering, drills), not here.
+app.get("/me/settings", requireAuth, async (req, res) => {
+  const settings = await getUserSettings(req.identity.sub);
+  res.json(settings);
+});
+
+app.patch("/me/settings", requireAuth, async (req, res) => {
+  const { analysisMode } = req.body ?? {};
+  const settings = await setUserSettings({ googleSub: req.identity.sub, analysisMode });
+  res.json(settings);
 });
 
 app.post("/games/:id/ask", requireAuth, async (req, res) => {
