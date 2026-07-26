@@ -61,6 +61,7 @@ export default function MultiplayerBoard({ myColor, onLeave }) {
   const [councilMessages, setCouncilMessages] = useState([]);
   const [recap, setRecap] = useState(null);
   const [definingMoves, setDefiningMoves] = useState([]);
+  const [evalTrack, setEvalTrack] = useState([]);
   const [councilReport, setCouncilReport] = useState(null);
   const [councilAnalyzing, setCouncilAnalyzing] = useState(false);
 
@@ -95,10 +96,11 @@ export default function MultiplayerBoard({ myColor, onLeave }) {
       if (!engineRef.current) return;
       setCouncilAnalyzing(true);
       try {
-        const { definingMoves: flagged } = await analyzeGame(pgn, engineRef.current, { depth: 12 });
+        const { definingMoves: flagged, evalTrack: track } = await analyzeGame(pgn, engineRef.current, { depth: 12 });
         if (unmountedRef.current) return;
         setDefiningMoves(flagged);
-        socket.emit("submitDefiningMoves", flagged);
+        setEvalTrack(track);
+        socket.emit("submitDefiningMoves", { definingMoves: flagged, evalTrack: track });
       } finally {
         if (!unmountedRef.current) setCouncilAnalyzing(false);
       }
@@ -115,8 +117,9 @@ export default function MultiplayerBoard({ myColor, onLeave }) {
     // Broadcast to both clients regardless of which one's submission the
     // server actually accepted, so the "losing" submitter's UI still
     // gets the canonical result instead of hanging on its own local copy.
-    function handleCouncilReport({ definingMoves: flagged, report }) {
+    function handleCouncilReport({ definingMoves: flagged, evalTrack: track, report }) {
       setDefiningMoves(flagged);
+      setEvalTrack(track ?? []);
       setCouncilReport(report);
     }
 
@@ -264,11 +267,18 @@ export default function MultiplayerBoard({ myColor, onLeave }) {
         <CouncilReportBento
           pgn={toPgn(gameRef.current)}
           definingMoves={definingMoves}
+          evalTrack={evalTrack}
           report={councilReport}
           loading={councilAnalyzing}
         />
       ) : (
-        <CouncilReport definingMoves={definingMoves} report={councilReport} loading={councilAnalyzing} />
+        <CouncilReport
+          pgn={toPgn(gameRef.current)}
+          definingMoves={definingMoves}
+          evalTrack={evalTrack}
+          report={councilReport}
+          loading={councilAnalyzing}
+        />
       ))}
     </div>
   );

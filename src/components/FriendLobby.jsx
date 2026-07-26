@@ -7,7 +7,7 @@ function roomLink(code) {
   return url.toString();
 }
 
-export default function FriendLobby({ onGameStart }) {
+export default function FriendLobby({ onGameStart, initialRoomCode }) {
   const [screen, setScreen] = useState("choose"); // "choose" | "waiting" | "join" | "joining"
   const [roomCode, setRoomCode] = useState("");
   const [joinInput, setJoinInput] = useState("");
@@ -15,15 +15,18 @@ export default function FriendLobby({ onGameStart }) {
   const [myColor, setMyColor] = useState(null);
   const [opponentPresent, setOpponentPresent] = useState(false);
 
-  // A shared link (?room=CODE) drops the joiner straight into the join
-  // form with the code pre-filled, rather than making them type it.
+  // A shared link (?room=CODE) or an accepted challenge's room code both
+  // drop the joiner straight into the join form with the code pre-filled,
+  // rather than making them type it — mechanically the same "join" path
+  // either way, just a different source for the code.
   useEffect(() => {
-    const roomFromUrl = new URLSearchParams(window.location.search).get("room");
+    const roomFromUrl = new URLSearchParams(window.location.search).get("room") ?? initialRoomCode;
     if (roomFromUrl) {
       setJoinInput(roomFromUrl.toUpperCase());
       setScreen("join");
     }
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialRoomCode]);
 
   useEffect(() => {
     function handleRoomCreated({ code }) {

@@ -1,3 +1,6 @@
+import { pickCriticalMove } from "./CouncilReportBento.jsx";
+import RibbonBoard from "./analysis/RibbonBoard.jsx";
+
 const CLASSIFICATION_LABEL = {
   blunder: "Blunder",
   mistake: "Mistake",
@@ -22,21 +25,40 @@ function captionFor(move, notes) {
 }
 
 /**
- * The deep post-game breakdown — distinct from the lightweight live-ping
- * CouncilPanel. `definingMoves` is the engine's objective output (src/lib/
- * gameAnalysis.js); `report` is the 5-persona LLM narration on top of it
- * (server/council.js's getCouncilReport). Either can arrive without the
- * other still being ready, so this renders whatever it currently has
- * rather than waiting for both.
+ * The deep, notation-forward post-game breakdown — distinct from the
+ * lightweight live-ping CouncilPanel and from the beginner-mode
+ * CouncilReportBento. `definingMoves` is the engine's objective output
+ * (src/lib/gameAnalysis.js); `report` is the 5-persona LLM narration on
+ * top of it (server/council.js's getCouncilReport). Either can arrive
+ * without the other still being ready, so this renders whatever it
+ * currently has rather than waiting for both.
+ *
+ * Wave 2: gains the same RibbonBoard the beginner bento uses (this view
+ * had no board at all before), plus real eval numbers next to each
+ * defining move — the numbers/notation beginner mode deliberately hides.
+ * Renders from the exact same cached `report`/`evalTrack` the beginner
+ * view does; switching modes never triggers a new fetch.
  */
-export default function CouncilReport({ definingMoves = [], report, loading }) {
+export default function CouncilReport({ pgn, definingMoves = [], evalTrack, report, loading }) {
   if (!loading && !report && definingMoves.length === 0) return null;
+
+  const criticalMove = pickCriticalMove(definingMoves);
 
   return (
     <div className="council-report">
       <h3>Council Report</h3>
 
       {loading && <p className="council-report-loading">The council is reviewing the game…</p>}
+
+      {criticalMove && pgn && (
+        <RibbonBoard
+          pgn={pgn}
+          definingMoves={definingMoves}
+          evalTrack={evalTrack}
+          initialPly={criticalMove.ply - 1}
+          mode="advanced"
+        />
+      )}
 
       {definingMoves.length > 0 && (
         <ol className="defining-moves">
@@ -47,6 +69,10 @@ export default function CouncilReport({ definingMoves = [], report, loading }) {
                 <span className="defining-move-san">
                   {m.moveNumber}
                   {m.color === "w" ? "." : "…"} {m.san}
+                </span>
+                <span className="defining-move-eval">
+                  {m.evalCp > 0 ? "+" : ""}
+                  {(m.evalCp / 100).toFixed(1)}
                 </span>
               </div>
               {report?.definingMoveNotes && (
@@ -67,6 +93,15 @@ export default function CouncilReport({ definingMoves = [], report, loading }) {
               </div>
             ) : null
           )}
+        </div>
+      )}
+
+      {report?.literature && (
+        <div className="council-bento-tile council-bento-literature">
+          <p className="council-bento-cap">From the literature</p>
+          <p className="council-bento-literature-principle">{report.literature.principle}</p>
+          <p>{report.literature.plain}</p>
+          <p className="council-bento-literature-lineage">{report.literature.lineage}</p>
         </div>
       )}
     </div>

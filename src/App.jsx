@@ -4,6 +4,7 @@ import Board from "./components/Board.jsx";
 import FriendLobby from "./components/FriendLobby.jsx";
 import MultiplayerBoard from "./components/MultiplayerBoard.jsx";
 import SignInButton from "./components/SignInButton.jsx";
+import LoginScreen from "./components/LoginScreen.jsx";
 import GameHistory from "./components/GameHistory.jsx";
 import AnalysisModeChooser from "./components/AnalysisModeChooser.jsx";
 import Dashboard from "./components/Dashboard.jsx";
@@ -32,6 +33,10 @@ export default function App() {
   const [savedGameId, setSavedGameId] = useState(null);
   const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
   const [friendGame, setFriendGame] = useState(null); // { myColor, roomCode } once both players are in
+  // Set when a challenge is accepted (either side) — routes FriendLobby
+  // straight to the join screen with this code pre-filled, the same path
+  // a shared room link already takes (see FriendLobby's initialRoomCode).
+  const [pendingChallengeRoomCode, setPendingChallengeRoomCode] = useState(null);
   const landedOnHomeRef = useRef(phase === "home");
 
   // Signed-in landing: once auth resolves to a real user (guest-only
@@ -65,7 +70,17 @@ export default function App() {
   // game does.
   function leaveFriendGame() {
     setFriendGame(null);
+    setPendingChallengeRoomCode(null);
     setPhase(enabled && user ? "home" : "setup");
+  }
+
+  // Bubbled up from the dashboard — accepting an incoming challenge, or
+  // the CTA's "join now" once an outgoing one is accepted, both land
+  // here the same way a shared room link does.
+  function enterChallengeRoom(code) {
+    setTopMode("friend");
+    setPendingChallengeRoomCode(code);
+    setPhase("setup");
   }
 
   function handleGameEnd(res) {
@@ -104,13 +119,16 @@ export default function App() {
   // patch, same fire-and-forget shape as handleRecap. `report` can be
   // null (LLM call failed soft); still worth persisting definingMoves
   // alone so the move timeline shows up even without persona narration.
-  function handleCouncilReport({ definingMoves, report }) {
+  function handleCouncilReport({ definingMoves, evalTrack, report }) {
     if (savedGameId && user && idToken) {
-      updateGameCouncilReport(idToken, savedGameId, { definingMoves, report }, { onUnauthorized: signOut }).then(
-        (updated) => {
-          if (updated) setHistoryRefreshKey((k) => k + 1);
-        }
-      );
+      updateGameCouncilReport(
+        idToken,
+        savedGameId,
+        { definingMoves, evalTrack, report },
+        { onUnauthorized: signOut }
+      ).then((updated) => {
+        if (updated) setHistoryRefreshKey((k) => k + 1);
+      });
     }
   }
 
@@ -128,14 +146,14 @@ export default function App() {
   const modeGateLoading = enabled && user && modeLoading;
   const showModeChooser = enabled && user && !modeLoading && mode === null;
 
+  if (!canPlay) return <LoginScreen />;
+
   return (
     <main className="app">
       <SignInButton />
       <h1>Chess by Alchemist</h1>
 
-      {!canPlay ? (
-        <p className="landing-message">Sign in with Google to play.</p>
-      ) : modeGateLoading ? null : showModeChooser ? (
+      {modeGateLoading ? null : showModeChooser ? (
         <AnalysisModeChooser />
       ) : phase === "home" ? (
         <Dashboard
@@ -147,6 +165,7 @@ export default function App() {
             setTopMode("friend");
             setPhase("setup");
           }}
+          onEnterRoom={enterChallengeRoom}
           historyRefreshKey={historyRefreshKey}
         />
       ) : (
@@ -205,7 +224,7 @@ export default function App() {
             (friendGame ? (
               <MultiplayerBoard myColor={friendGame.myColor} onLeave={leaveFriendGame} />
             ) : (
-              <FriendLobby onGameStart={setFriendGame} />
+              <FriendLobby onGameStart={setFriendGame} initialRoomCode={pendingChallengeRoomCode} />
             ))}
 
           <GameHistory refreshKey={historyRefreshKey} />

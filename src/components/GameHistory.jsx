@@ -56,6 +56,14 @@ export function opponentLabel(game, viewerSub) {
   return game.black;
 }
 
+// Same derivation as opponentLabel, for the sub instead of the display
+// name — the challenge-first CTA needs the opponent's actual identity to
+// challenge, not just their name.
+export function opponentSub(game, viewerSub) {
+  if (viewerSub && game.black_google_sub === viewerSub) return game.white_google_sub;
+  return game.black_google_sub;
+}
+
 function GameRow({ game, viewerSub }) {
   const [expanded, setExpanded] = useState(false);
   const { mode: analysisMode } = useAnalysisMode();
@@ -83,12 +91,15 @@ function GameRow({ game, viewerSub }) {
               <CouncilReportBento
                 pgn={game.pgn}
                 definingMoves={game.council_report.definingMoves ?? []}
+                evalTrack={game.council_report.evalTrack}
                 report={game.council_report.report ?? null}
                 patterns={game.patterns ?? []}
               />
             ) : (
               <CouncilReport
+                pgn={game.pgn}
                 definingMoves={game.council_report.definingMoves ?? []}
+                evalTrack={game.council_report.evalTrack}
                 report={game.council_report.report ?? null}
               />
             ))}

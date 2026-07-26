@@ -116,3 +116,63 @@ export function rankWorthReviewing(games, viewerSub, limit = 5) {
     .slice(0, limit)
     .map(({ game, patterns, blunderCount }) => ({ ...game, patterns, blunderCount }));
 }
+
+/**
+ * Wave 3: rivalries as a derived query, no opponent table — an opponent
+ * *is* another user's google_sub, the pairing is just a group-by over
+ * `games`. `games` must be `getFriendGames(viewerSub)`'s result (both
+ * seats' identities present, newest-first) — not `listGames()`, which
+ * caps at 50 and includes solo-bot rows with no real opponent.
+ */
+export function computeRivalries(games, viewerSub) {
+  const byOpponent = new Map();
+
+  for (const game of games) {
+    const viewerIsWhite = game.white_google_sub === viewerSub;
+    const opponentSub = viewerIsWhite ? game.black_google_sub : game.white_google_sub;
+
+    if (!byOpponent.has(opponentSub)) {
+      // `games` is newest-first, so the first game seen per opponent
+      // carries the freshest display name and date — never overwritten
+      // below, so a later account rename doesn't retroactively relabel it.
+      byOpponent.set(opponentSub, {
+        opponentSub,
+        opponentName: viewerIsWhite ? game.black : game.white,
+        lastPlayedAt: game.played_at,
+        w: 0,
+        l: 0,
+        d: 0,
+      });
+    }
+
+    const entry = byOpponent.get(opponentSub);
+    if (game.result === "1-0") entry[viewerIsWhite ? "w" : "l"] += 1;
+    else if (game.result === "0-1") entry[viewerIsWhite ? "l" : "w"] += 1;
+    else if (game.result === "1/2-1/2") entry.d += 1;
+    // Any other result tag (e.g. an unfinished "*") shouldn't reach a
+    // `mode='friend'` row from getFriendGames, but stays uncounted rather
+    // than crashing if it somehow does.
+  }
+
+  const rivalries = [...byOpponent.values()].map(({ opponentSub, opponentName, lastPlayedAt, w, l, d }) => ({
+    opponentUserId: opponentSub,
+    opponentName,
+    record: { w, l, d },
+    leader: w > l ? "you" : l > w ? "opponent" : "even",
+    lastPlayedAt,
+    canChallenge: true,
+  }));
+
+  // The rivalry the viewer is *losing* surfaces first (more motivating,
+  // per the spec) — then by how established it is (more games), then by
+  // recency.
+  return rivalries.sort((a, b) => {
+    const aLosing = a.leader === "opponent" ? 0 : 1;
+    const bLosing = b.leader === "opponent" ? 0 : 1;
+    if (aLosing !== bLosing) return aLosing - bLosing;
+    const aTotal = a.record.w + a.record.l + a.record.d;
+    const bTotal = b.record.w + b.record.l + b.record.d;
+    if (aTotal !== bTotal) return bTotal - aTotal;
+    return new Date(b.lastPlayedAt) - new Date(a.lastPlayedAt);
+  });
+}

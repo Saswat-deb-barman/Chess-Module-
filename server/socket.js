@@ -7,10 +7,13 @@ import {
   markDisconnected,
   bothSeatsDisconnected,
   startCleanupSweep,
+  resolveSeatForIdentity,
+  isSeatConnected,
 } from "./rooms.js";
 import { tryMove, getGameOverReason, getResultTag, detectMoment, toFen, toPgn } from "./gameEngine.js";
 import { saveGame, updateGameRecap, updateGameCouncilReport } from "./db.js";
 import { getPing, getRecap, getCouncilReport } from "./council.js";
+import { getLiteratureTile } from "./gemini.js";
 
 /**
  * Milestone 3: the server now holds the authoritative chess.js instance
@@ -102,8 +105,31 @@ export function registerSocketHandlers(io) {
     socket.on("joinRoom", (code) => {
       const room = getRoom(code);
       if (!room) return socket.emit("joinError", "Room not found.");
-      if (room.black) return socket.emit("joinError", "Room is already full.");
 
+      // Wave 3: a challenge-accept room is reserved for two named subs
+      // before either connects — resolveSeatForIdentity is the only path
+      // in (rejecting anyone whose sub doesn't match an unclaimed expected
+      // seat), a stricter check than the ad hoc path below. Either party
+      // may arrive first, so "opponentJoined" only fires once BOTH seats
+      // are actually connected, not just "someone just joined."
+      if (room.expected) {
+        const color = resolveSeatForIdentity(room, socket.identity.sub);
+        if (!color) return socket.emit("joinError", "This game isn't for you.");
+        room[color === "w" ? "white" : "black"] = {
+          socketId: socket.id,
+          sub: socket.identity.sub,
+          email: socket.identity.email,
+        };
+        socket.join(room.code);
+        socket.emit("playerRole", color);
+        if (isSeatConnected(room.white) && isSeatConnected(room.black)) {
+          io.to(room.code).emit("opponentJoined");
+        }
+        return;
+      }
+
+      // Ad hoc path — unchanged: any code-holder may claim the open seat.
+      if (room.black) return socket.emit("joinError", "Room is already full.");
       room.black = { socketId: socket.id, sub: socket.identity.sub, email: socket.identity.email };
       room.game.header("Black", socket.identity.email);
       socket.join(room.code);
@@ -165,20 +191,28 @@ export function registerSocketHandlers(io) {
     // (free, client-side) but the LLM call + persistence, so that's the
     // only piece guarded against duplication, same class of fix
     // Milestone 6 already applied to the simple recap.
-    socket.on("submitDefiningMoves", async (definingMoves) => {
+    socket.on("submitDefiningMoves", async ({ definingMoves, evalTrack } = {}) => {
       const room = findRoomBySocketId(socket.id);
       if (!room || !room.ended || room.reportRequested) return;
       room.reportRequested = true;
 
-      const report = await getCouncilReport({ pgn: toPgn(room.game), result: room.finishedResult, definingMoves });
-      io.to(room.code).emit("councilReport", { definingMoves, report });
+      const pgn = toPgn(room.game);
+      const [report, literature] = await Promise.all([
+        getCouncilReport({ pgn, result: room.finishedResult, definingMoves }),
+        getLiteratureTile({ pgn, definingMoves }),
+      ]);
+      // Each provider's absence degrades independently — a Claude-down
+      // game can still surface Gemini's literature tile and vice versa;
+      // only collapses to a true null when BOTH came back empty.
+      const mergedReport = report || literature ? { ...report, literature } : null;
+      io.to(room.code).emit("councilReport", { definingMoves, evalTrack, report: mergedReport });
 
       if (!room.savedGameId) return;
       try {
         await updateGameCouncilReport({
           googleSub: room.viewerSub,
           gameId: room.savedGameId,
-          councilReport: { definingMoves, report },
+          councilReport: { definingMoves, evalTrack, report: mergedReport },
         });
       } catch (err) {
         console.error("Failed to attach council report to friend game:", err.message);
