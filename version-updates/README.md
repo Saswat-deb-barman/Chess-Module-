@@ -29,3 +29,7 @@ deployed without any risk to the live game.
   "Chess for Dummies") has landed as reference material — extracted
   React source + design tokens + an interactive prototype — but nothing
   is wired up yet; still no `package.json`/dev server of its own.
+- **chess-3d-engine/** — a 3D chess board/piece renderer: Three.js,
+  orthographic camera, GLTF-loaded piece models generated with Gemini's
+  help. Scaffold only so far (placeholder scene proving the render loop
+  works) — see its own README for what's still incoming.
