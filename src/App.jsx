@@ -33,6 +33,10 @@ export default function App() {
   const [savedGameId, setSavedGameId] = useState(null);
   const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
   const [friendGame, setFriendGame] = useState(null); // { myColor, roomCode } once both players are in
+  // Set when a challenge is accepted (either side) — routes FriendLobby
+  // straight to the join screen with this code pre-filled, the same path
+  // a shared room link already takes (see FriendLobby's initialRoomCode).
+  const [pendingChallengeRoomCode, setPendingChallengeRoomCode] = useState(null);
   const landedOnHomeRef = useRef(phase === "home");
 
   // Signed-in landing: once auth resolves to a real user (guest-only
@@ -66,7 +70,17 @@ export default function App() {
   // game does.
   function leaveFriendGame() {
     setFriendGame(null);
+    setPendingChallengeRoomCode(null);
     setPhase(enabled && user ? "home" : "setup");
+  }
+
+  // Bubbled up from the dashboard — accepting an incoming challenge, or
+  // the CTA's "join now" once an outgoing one is accepted, both land
+  // here the same way a shared room link does.
+  function enterChallengeRoom(code) {
+    setTopMode("friend");
+    setPendingChallengeRoomCode(code);
+    setPhase("setup");
   }
 
   function handleGameEnd(res) {
@@ -151,6 +165,7 @@ export default function App() {
             setTopMode("friend");
             setPhase("setup");
           }}
+          onEnterRoom={enterChallengeRoom}
           historyRefreshKey={historyRefreshKey}
         />
       ) : (
@@ -209,7 +224,7 @@ export default function App() {
             (friendGame ? (
               <MultiplayerBoard myColor={friendGame.myColor} onLeave={leaveFriendGame} />
             ) : (
-              <FriendLobby onGameStart={setFriendGame} />
+              <FriendLobby onGameStart={setFriendGame} initialRoomCode={pendingChallengeRoomCode} />
             ))}
 
           <GameHistory refreshKey={historyRefreshKey} />

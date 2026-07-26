@@ -600,6 +600,58 @@ h1 {
   color: var(--paper-300);
 }
 
+.primary-cta-waiting {
+  margin: 0 0 10px;
+  padding: 10px;
+  color: var(--paper-300);
+  font-size: 0.9rem;
+  font-style: italic;
+}
+
+.waiting-on-you {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.waiting-on-you-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 14px;
+  background: linear-gradient(135deg, var(--felt-800), var(--felt-900));
+  border: 1px solid var(--brass-700);
+  border-radius: var(--r-sm);
+}
+
+.waiting-on-you-text {
+  margin: 0;
+  color: var(--paper-100);
+  font-size: 0.85rem;
+}
+
+.waiting-on-you-actions {
+  display: flex;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.waiting-on-you-decline {
+  padding: 6px 14px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line-1);
+  background: transparent;
+  color: var(--paper-300);
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.waiting-on-you-decline:hover {
+  background: var(--felt-800);
+}
+
 .trajectory-header {
   margin-bottom: 16px;
 }
