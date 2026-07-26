@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../lib/auth.jsx";
 import { fetchMyStats } from "../lib/stats.js";
+import { fetchRivalries } from "../lib/rivalries.js";
 import { listGames } from "../lib/games.js";
 import TrajectoryHeader from "./dashboard/TrajectoryHeader.jsx";
 import ImprovementStrip from "./dashboard/ImprovementStrip.jsx";
 import PrimaryCta from "./dashboard/PrimaryCta.jsx";
+import RivalriesRow from "./dashboard/RivalriesRow.jsx";
 import WorthReviewing from "./dashboard/WorthReviewing.jsx";
 import { pickCriticalMove } from "./CouncilReportBento.jsx";
 import RibbonBoard from "./analysis/RibbonBoard.jsx";
@@ -23,6 +25,8 @@ export default function Dashboard({ onPlayBot, onPlayFriend, historyRefreshKey }
   const [stats, setStats] = useState(null);
   const [statsLoading, setStatsLoading] = useState(true);
   const [games, setGames] = useState([]);
+  const [rivalries, setRivalries] = useState([]);
+  const [rivalriesLoading, setRivalriesLoading] = useState(true);
   const [drill, setDrill] = useState(null); // { game, label } | null
 
   useEffect(() => {
@@ -49,6 +53,21 @@ export default function Dashboard({ onPlayBot, onPlayFriend, historyRefreshKey }
     listGames(idToken, { onUnauthorized: signOut }).then(setGames);
   }, [user, idToken, signOut, historyRefreshKey]);
 
+  // Its own independent zone (Wave 1's "every zone owns its state" rule)
+  // — a slow/failed rivalries fetch must never block the CTA or history.
+  useEffect(() => {
+    if (!user || !idToken) {
+      setRivalries([]);
+      setRivalriesLoading(false);
+      return;
+    }
+    setRivalriesLoading(true);
+    fetchRivalries(idToken, { onUnauthorized: signOut }).then((data) => {
+      setRivalries(data);
+      setRivalriesLoading(false);
+    });
+  }, [user, idToken, signOut, historyRefreshKey]);
+
   function handleDrillPattern(pattern) {
     const match = games.find((g) => g.patterns?.includes(pattern.id));
     if (match) setDrill({ game: match, label: pattern.label });
@@ -66,6 +85,7 @@ export default function Dashboard({ onPlayBot, onPlayFriend, historyRefreshKey }
     <div className="dashboard">
       <TrajectoryHeader stats={stats} loading={statsLoading} />
       <ImprovementStrip patterns={stats?.patterns ?? []} loading={statsLoading} onDrill={handleDrillPattern} />
+      <RivalriesRow rivalries={rivalries} loading={rivalriesLoading} onInviteFriend={onPlayFriend} />
       <WorthReviewing refreshKey={historyRefreshKey} onSelect={handleReviewGame} />
 
       {drill && (
