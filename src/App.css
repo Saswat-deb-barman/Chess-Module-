@@ -1203,6 +1203,13 @@ h1 {
   color: var(--paper-50);
 }
 
+.defining-move-eval {
+  margin-left: auto;
+  font-size: 0.75rem;
+  color: var(--paper-500);
+  font-variant-numeric: tabular-nums;
+}
+
 .defining-move-caption {
   font-size: 0.8rem;
   color: var(--paper-300);
