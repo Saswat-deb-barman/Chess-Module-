@@ -373,6 +373,25 @@ h1 {
   background: var(--felt-800);
 }
 
+.dashboard-nav-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 16px;
+  font-size: 0.8rem;
+  border: 1px solid var(--line-1);
+  background: transparent;
+  color: var(--paper-300);
+  border-radius: var(--r-pill);
+  padding: 4px 14px;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease);
+}
+
+.dashboard-nav-button:hover {
+  background: var(--felt-800);
+}
+
 .game-history {
   margin-top: 28px;
   text-align: left;
@@ -738,6 +757,280 @@ h1 {
   font-weight: 650;
   font-size: 1.05rem;
   color: var(--paper-50);
+}
+
+/* Restored data-driven zones (trajectory/improvement/worth-reviewing feed
+   "Learn", rivalries feeds "Play") — their backend endpoints were kept
+   alive dormant through the learn/play rewrite specifically so this
+   could happen without any server work. */
+.trajectory-header {
+  margin: 0 0 16px;
+}
+
+.trajectory-header p {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: var(--paper-100);
+}
+
+.trajectory-header--loading p,
+.trajectory-header--onboarding p {
+  color: var(--paper-500);
+  font-style: italic;
+}
+
+.improvement-strip {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  margin: 0 0 20px;
+}
+
+.improvement-card {
+  flex: 0 0 auto;
+  min-width: 140px;
+  background: var(--felt-800);
+  border: 1px solid var(--line-1);
+  border-radius: var(--r-sm);
+  padding: 12px 14px;
+}
+
+.improvement-card-label {
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+  color: var(--paper-100);
+  font-weight: 600;
+}
+
+.improvement-card .sparkline polyline {
+  stroke: var(--paper-500);
+}
+
+.improvement-card-trend {
+  margin: 8px 0 10px;
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.improvement-card-trend--down {
+  color: var(--win);
+}
+
+.improvement-card-trend--up {
+  color: var(--loss);
+}
+
+.improvement-card-trend--flat {
+  color: var(--paper-500);
+}
+
+.improvement-card-drill {
+  padding: 4px 12px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line-1);
+  background: transparent;
+  color: var(--brass-300);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease);
+}
+
+.improvement-card-drill:hover {
+  background: var(--felt-700);
+}
+
+.worth-reviewing {
+  margin: 0 0 8px;
+}
+
+.worth-reviewing h3 {
+  font-size: 0.85rem;
+  color: var(--paper-500);
+  margin-bottom: 8px;
+}
+
+.worth-reviewing ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.worth-reviewing-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: var(--felt-800);
+  border: 1px solid var(--line-1);
+  border-radius: var(--r-sm);
+}
+
+.worth-reviewing-meta {
+  flex: 1;
+  font-size: 0.85rem;
+  color: var(--paper-100);
+}
+
+.worth-reviewing-why {
+  font-size: 0.75rem;
+  color: var(--loss);
+}
+
+.worth-reviewing-review {
+  padding: 3px 10px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line-1);
+  background: transparent;
+  color: var(--brass-300);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease);
+}
+
+.worth-reviewing-review:hover {
+  background: var(--felt-700);
+}
+
+.rivalries-row {
+  margin: 0 0 20px;
+}
+
+.rivalries-row h3 {
+  font-size: 0.85rem;
+  color: var(--paper-500);
+  margin-bottom: 8px;
+}
+
+.rivalries-invite-card {
+  padding: 14px;
+  background: var(--felt-800);
+  border: 1px dashed var(--line-2);
+  border-radius: var(--r-sm);
+  text-align: center;
+}
+
+.rivalries-invite-card p {
+  margin: 0 0 10px;
+  color: var(--paper-300);
+  font-size: 0.85rem;
+}
+
+.rivalries-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.rivalry-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: var(--felt-800);
+  border: 1px solid var(--line-1);
+  border-radius: var(--r-sm);
+}
+
+.rivalry-avatar {
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--felt-700);
+  color: var(--paper-50);
+  font-family: var(--font-display);
+  font-weight: 650;
+  font-size: 0.9rem;
+}
+
+.rivalry-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.rivalry-name {
+  margin: 0;
+  color: var(--paper-100);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.rivalry-leader {
+  margin: 2px 0 0;
+  font-size: 0.75rem;
+}
+
+.rivalry-leader--you {
+  color: var(--win);
+}
+
+.rivalry-leader--opponent {
+  color: var(--loss);
+}
+
+.rivalry-leader--even {
+  color: var(--paper-500);
+}
+
+.rivalry-challenge {
+  padding: 3px 10px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line-1);
+  background: transparent;
+  color: var(--brass-300);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease);
+}
+
+.rivalry-challenge:hover {
+  background: var(--felt-700);
+}
+
+.dashboard-drill {
+  margin-bottom: 20px;
+  padding: 14px;
+  background: var(--felt-900);
+  border: 1px solid var(--brass-700);
+  border-radius: var(--r-sm);
+}
+
+.dashboard-drill-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.dashboard-drill-title {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--brass-300);
+  font-weight: 600;
+}
+
+.dashboard-drill-close {
+  padding: 3px 10px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line-1);
+  background: transparent;
+  color: var(--paper-300);
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.dashboard-drill-close:hover {
+  background: var(--felt-800);
 }
 
 .board-screen {

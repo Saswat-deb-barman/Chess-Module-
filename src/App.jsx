@@ -74,6 +74,15 @@ export default function App() {
     setPhase(enabled && user ? "home" : "setup");
   }
 
+  // Persistent way back to the dashboard from any screen — bot setup, a
+  // game in progress, the friend lobby. Deliberately doesn't touch
+  // friendGame/gameKey (same as switching topMode already doesn't) — an
+  // in-progress bot game is just abandoned, same as it always could be by
+  // switching to "Play a friend" and back.
+  function goToDashboard() {
+    setPhase("home");
+  }
+
   // Bubbled up from the dashboard — accepting an incoming challenge, or
   // the CTA's "join now" once an outgoing one is accepted, both land
   // here the same way a shared room link does.
@@ -148,9 +157,16 @@ export default function App() {
 
   if (!canPlay) return <LoginScreen />;
 
+  const showDashboardNav = enabled && user && !modeGateLoading && !showModeChooser && phase !== "home";
+
   return (
     <main className="app">
       <SignInButton />
+      {showDashboardNav && (
+        <button className="dashboard-nav-button" onClick={goToDashboard}>
+          ← Dashboard
+        </button>
+      )}
       <h1>Chess by Alchemist</h1>
 
       {modeGateLoading ? null : showModeChooser ? (
