@@ -80,6 +80,15 @@ export default function CouncilReportBento({ pgn, definingMoves = [], evalTrack,
         </div>
       )}
 
+      {report?.literature && (
+        <div className="council-bento-tile council-bento-literature">
+          <p className="council-bento-cap">From the literature</p>
+          <p className="council-bento-literature-principle">{report.literature.principle}</p>
+          <p>{report.literature.plain}</p>
+          <p className="council-bento-literature-lineage">{report.literature.lineage}</p>
+        </div>
+      )}
+
       {topPattern && (
         <div className="council-bento-tile council-bento-pattern">
           <p className="council-bento-cap">This writes back to your tracker</p>

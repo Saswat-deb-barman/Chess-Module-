@@ -69,6 +69,15 @@ export default function CouncilReport({ definingMoves = [], report, loading }) {
           )}
         </div>
       )}
+
+      {report?.literature && (
+        <div className="council-bento-tile council-bento-literature">
+          <p className="council-bento-cap">From the literature</p>
+          <p className="council-bento-literature-principle">{report.literature.principle}</p>
+          <p>{report.literature.plain}</p>
+          <p className="council-bento-literature-lineage">{report.literature.lineage}</p>
+        </div>
+      )}
     </div>
   );
 }
