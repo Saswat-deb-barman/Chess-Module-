@@ -652,274 +652,80 @@ h1 {
   background: var(--felt-800);
 }
 
-.trajectory-header {
-  margin-bottom: 16px;
-}
-
-.trajectory-header p {
-  margin: 0;
-  font-size: 0.95rem;
-  line-height: 1.5;
-  color: var(--paper-100);
-}
-
-.trajectory-header--loading p,
-.trajectory-header--onboarding p {
-  color: var(--paper-500);
-  font-style: italic;
-}
-
-.improvement-strip {
-  display: flex;
-  gap: 12px;
-  overflow-x: auto;
-  margin-bottom: 20px;
-}
-
-.improvement-card {
-  flex: 0 0 auto;
-  min-width: 140px;
+/* Two visually distinct halves of the rewritten dashboard — "learn"
+   works identically for a 0-game and a 500-game user, "play" is the
+   functional half (start a game, pending challenges, history). A left
+   border accent (brass for learn, a plain hairline for play) is enough
+   distinction without introducing new color tokens. */
+.dashboard-section {
+  margin-bottom: 28px;
+  padding: 16px 18px;
+  border-radius: var(--r-sm);
   background: var(--felt-900);
   border: 1px solid var(--line-1);
-  border-radius: var(--r-sm);
-  padding: 12px 14px;
+  border-left-width: 3px;
 }
 
-.improvement-card-label {
-  margin: 0 0 8px;
-  font-size: 0.8rem;
-  color: var(--paper-100);
+.dashboard-section--learn {
+  border-left-color: var(--brass-500);
+}
+
+.dashboard-section--play {
+  border-left-color: var(--line-2);
+}
+
+.dashboard-section-label {
+  margin: 0 0 14px;
+  font-size: var(--t-micro);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--paper-500);
   font-weight: 600;
 }
 
-.improvement-card .sparkline polyline {
-  stroke: var(--paper-500);
-}
-
-.improvement-card-trend {
-  margin: 8px 0 10px;
-  font-size: 0.75rem;
-  font-variant-numeric: tabular-nums;
-}
-
-.improvement-card-trend--down {
-  color: var(--win);
-}
-
-.improvement-card-trend--up {
-  color: var(--loss);
-}
-
-.improvement-card-trend--flat {
-  color: var(--paper-500);
-}
-
-.improvement-card-drill {
-  padding: 4px 12px;
-  border-radius: var(--r-pill);
-  border: 1px solid var(--line-1);
-  background: transparent;
-  color: var(--brass-300);
-  font-size: 0.75rem;
-  cursor: pointer;
-  transition: background var(--dur-fast) var(--ease);
-}
-
-.improvement-card-drill:hover {
-  background: var(--felt-800);
-}
-
-.worth-reviewing {
+.learn-about-chess {
   margin-bottom: 20px;
-}
-
-.worth-reviewing h3 {
-  font-size: 0.85rem;
-  color: var(--paper-500);
-  margin-bottom: 8px;
-}
-
-.worth-reviewing ul {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.worth-reviewing-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 12px;
-  background: var(--felt-900);
-  border: 1px solid var(--line-1);
-  border-radius: var(--r-sm);
-}
-
-.worth-reviewing-meta {
-  flex: 1;
-  font-size: 0.85rem;
-  color: var(--paper-100);
-}
-
-.worth-reviewing-why {
-  font-size: 0.75rem;
-  color: var(--loss);
-}
-
-.worth-reviewing-review {
-  padding: 3px 10px;
-  border-radius: var(--r-pill);
-  border: 1px solid var(--line-1);
-  background: transparent;
-  color: var(--brass-300);
-  font-size: 0.75rem;
-  cursor: pointer;
-  transition: background var(--dur-fast) var(--ease);
-}
-
-.worth-reviewing-review:hover {
-  background: var(--felt-800);
-}
-
-.rivalries-row {
-  margin-bottom: 20px;
-}
-
-.rivalries-row h3 {
-  font-size: 0.85rem;
-  color: var(--paper-500);
-  margin-bottom: 8px;
-}
-
-.rivalries-invite-card {
   padding: 14px;
-  background: var(--felt-900);
-  border: 1px dashed var(--line-2);
-  border-radius: var(--r-sm);
-  text-align: center;
-}
-
-.rivalries-invite-card p {
-  margin: 0 0 10px;
-  color: var(--paper-300);
-  font-size: 0.85rem;
-}
-
-.rivalries-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.rivalry-card {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 12px;
-  background: var(--felt-900);
-  border: 1px solid var(--line-1);
+  background: var(--felt-800);
   border-radius: var(--r-sm);
 }
 
-.rivalry-avatar {
-  flex: 0 0 auto;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--felt-700);
-  color: var(--paper-50);
+.learn-about-chess-title {
+  margin: 0 0 8px;
   font-family: var(--font-display);
   font-weight: 650;
-  font-size: 0.9rem;
+  font-size: 1.05rem;
+  color: var(--paper-50);
 }
 
-.rivalry-info {
-  flex: 1;
-  min-width: 0;
+.learn-about-chess-body {
+  margin: 0 0 12px;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--paper-300);
 }
 
-.rivalry-name {
-  margin: 0;
-  color: var(--paper-100);
-  font-size: 0.85rem;
-  font-weight: 600;
-}
-
-.rivalry-leader {
-  margin: 2px 0 0;
-  font-size: 0.75rem;
-}
-
-.rivalry-leader--you {
-  color: var(--win);
-}
-
-.rivalry-leader--opponent {
-  color: var(--loss);
-}
-
-.rivalry-leader--even {
-  color: var(--paper-500);
-}
-
-.rivalry-challenge {
-  padding: 3px 10px;
+.learn-about-chess-next-button {
+  padding: 4px 14px;
   border-radius: var(--r-pill);
   border: 1px solid var(--line-1);
   background: transparent;
   color: var(--brass-300);
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   cursor: pointer;
   transition: background var(--dur-fast) var(--ease);
 }
 
-.rivalry-challenge:hover {
-  background: var(--felt-800);
+.learn-about-chess-next-button:hover {
+  background: var(--felt-700);
 }
 
-.dashboard-drill {
-  margin-bottom: 20px;
-  padding: 14px;
-  background: var(--felt-900);
-  border: 1px solid var(--brass-700);
-  border-radius: var(--r-sm);
-}
-
-.dashboard-drill-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-}
-
-.dashboard-drill-title {
-  margin: 0;
-  font-size: 0.85rem;
-  color: var(--brass-300);
-  font-weight: 600;
-}
-
-.dashboard-drill-close {
-  padding: 3px 10px;
-  border-radius: var(--r-pill);
-  border: 1px solid var(--line-1);
-  background: transparent;
-  color: var(--paper-300);
-  font-size: 0.75rem;
-  cursor: pointer;
-}
-
-.dashboard-drill-close:hover {
-  background: var(--felt-800);
+.talk-to-council-title {
+  margin: 0 0 10px;
+  font-family: var(--font-display);
+  font-weight: 650;
+  font-size: 1.05rem;
+  color: var(--paper-50);
 }
 
 .board-screen {

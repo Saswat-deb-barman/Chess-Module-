@@ -64,6 +64,47 @@ export async function answerQuestion({ pgn, recap, question, askingColor }) {
 }
 
 /**
+ * "Talk to the Council" — a general chess-teaching Q&A, not tied to one
+ * specific finished game like answerQuestion(). Single-shot like
+ * answerQuestion (no conversation memory sent back to the model — the
+ * dashboard chat UI keeps its own locally-displayed transcript, same
+ * deliberate scope as that feature). `games` is `[{ pgn, label }]`: the
+ * caller's job to supply either the asker's own recent games or, when
+ * they have none yet, entries from server/instructiveGames.js — this
+ * function doesn't know or care which.
+ */
+export async function chatWithCouncil({ question, games = [] }) {
+  if (!client || !question) return null;
+  try {
+    const context = games.length
+      ? games.map((g, i) => `Game ${i + 1} (${g.label}):\n${g.pgn}`).join("\n\n")
+      : "No example games available right now.";
+    const response = await client.messages.create({
+      model: "claude-sonnet-5",
+      max_tokens: 400,
+      // Same thinking-budget starvation class as getCouncilReport below —
+      // a prompt that asks the model to actually reason over a full PGN
+      // (rather than a short fixed-reaction like getPing) can trigger
+      // extended thinking, which puts a "thinking" block at content[0]
+      // ahead of the real "text" block. Disabled here for the same reason
+      // it's disabled there, not because every chat question needs it —
+      // this one just got hit by it during verification.
+      thinking: { type: "disabled" },
+      messages: [
+        {
+          role: "user",
+          content: `You are The Council, a warm and knowledgeable chess teacher. A student asked: "${question}"\n\nReference these games where genuinely relevant (don't force it if the question is generic):\n\n${context}\n\nAnswer conversationally, a few sentences unless the question needs more.`,
+        },
+      ],
+    });
+    const textBlock = response.content.find((block) => block.type === "text");
+    return textBlock?.text?.trim() ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Fuller post-game recap from the final PGN. Same fail-soft contract as
  * getPing.
  */
