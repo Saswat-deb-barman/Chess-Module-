@@ -78,9 +78,32 @@ export async function getLiteratureTile({ pgn, definingMoves = [] }) {
   if (!client || !pgn) return null;
   try {
     const response = await client.models.generateContent({
-      model: "gemini-2.5-pro",
+      // gemini-2.5-pro has zero free-tier quota on a fresh project
+      // (confirmed live — a 429 RESOURCE_EXHAUSTED with limit:0, not a
+      // transient rate limit). gemini-flash-latest is Google's rolling
+      // alias for its current flash-tier model and has real free-tier
+      // quota; this call is a single short one-time narration, not
+      // reasoning-heavy work, so flash is the right tier regardless.
+      model: "gemini-flash-latest",
       contents: buildPrompt({ pgn, definingMoves }),
-      config: { temperature: 0.2, maxOutputTokens: 400 },
+      // This model defaults to spending most of its token budget on
+      // hidden "thinking" tokens before any visible output — the exact
+      // same starvation problem council.js already hit with Sonnet 5
+      // (see its own thinking:{type:"disabled"} comment). Gemini's SDK
+      // rejects a literal 0 thinkingBudget for this model, so this caps
+      // it low instead and gives maxOutputTokens generous headroom (real
+      // usage varied 600-1400 thinking tokens across live test runs).
+      // responseMimeType forces strict JSON output — without it, this
+      // model intermittently returned truncated/malformed JSON that
+      // failed parseJsonLoose even well under the token ceiling; with it,
+      // five consecutive live test calls all returned valid, parseable
+      // tiles.
+      config: {
+        temperature: 0.2,
+        maxOutputTokens: 2048,
+        thinkingConfig: { thinkingBudget: 512 },
+        responseMimeType: "application/json",
+      },
     });
     const parsed = parseJsonLoose(response.text);
     return isValidLiteratureTile(parsed) ? parsed : null;
