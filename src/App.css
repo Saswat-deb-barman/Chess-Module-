@@ -595,6 +595,116 @@ h1 {
   background: var(--brass-300);
 }
 
+/* Full-width indeterminate loading state — fills the gap that used to be
+   a bare `null` while the mode preference (or any other full-screen
+   gate) loads. No real progress fraction to report, so the fill just
+   sweeps back and forth rather than filling to a percentage. */
+.loading-screen {
+  padding: 56px 16px;
+  text-align: center;
+}
+
+.loading-bar {
+  position: relative;
+  width: 100%;
+  max-width: 220px;
+  height: 4px;
+  margin: 0 auto 14px;
+  border-radius: var(--r-pill);
+  background: var(--felt-800);
+  overflow: hidden;
+}
+
+.loading-bar-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 40%;
+  border-radius: var(--r-pill);
+  background: var(--brass-500);
+  animation: loading-bar-sweep 1.2s ease-in-out infinite;
+}
+
+@keyframes loading-bar-sweep {
+  0% {
+    left: -40%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+.loading-screen-label {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--paper-500);
+  font-style: italic;
+}
+
+/* Shared shimmer skeleton — used inline by dashboard zones (trajectory,
+   improvement patterns, rivalries) while their own fetch is in flight,
+   instead of rendering nothing until data arrives. */
+.skeleton-bar {
+  border-radius: var(--r-sm);
+  background: linear-gradient(90deg, var(--felt-800) 25%, var(--felt-700) 37%, var(--felt-800) 63%);
+  background-size: 400% 100%;
+  animation: skeleton-shimmer 1.4s ease infinite;
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.trajectory-skeleton-line {
+  height: 16px;
+  width: 85%;
+}
+
+.improvement-card--skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.skeleton-line-label {
+  height: 12px;
+  width: 70%;
+}
+
+.skeleton-line-spark {
+  height: 20px;
+  width: 100%;
+}
+
+.skeleton-line-trend {
+  height: 10px;
+  width: 45%;
+}
+
+.skeleton-avatar {
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+}
+
+.skeleton-line-name {
+  height: 12px;
+  width: 55%;
+  margin-bottom: 6px;
+}
+
+.skeleton-line-leader {
+  height: 10px;
+  width: 40%;
+}
+
 .dashboard {
   margin-top: 16px;
   text-align: left;

@@ -11,7 +11,19 @@ function trendCopy(trend) {
 // recently (server/stats.js). "down" reads as improvement (the pattern
 // is fading), "up" as worsening — the color follows that, not raw sign.
 export default function ImprovementStrip({ patterns = [], loading, onDrill }) {
-  if (loading) return null;
+  if (loading) {
+    return (
+      <div className="improvement-strip">
+        {[0, 1].map((i) => (
+          <div key={i} className="improvement-card improvement-card--skeleton">
+            <div className="skeleton-bar skeleton-line-label" />
+            <div className="skeleton-bar skeleton-line-spark" />
+            <div className="skeleton-bar skeleton-line-trend" />
+          </div>
+        ))}
+      </div>
+    );
+  }
   if (patterns.length === 0) return null;
 
   return (

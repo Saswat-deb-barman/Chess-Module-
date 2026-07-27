@@ -21,7 +21,20 @@ function leaderLine({ record, leader, opponentName }) {
  * it's the right home for that nudge.
  */
 export default function RivalriesRow({ rivalries = [], loading, onChallenge, onInviteFriend }) {
-  if (loading) return null;
+  if (loading) {
+    return (
+      <div className="rivalries-row">
+        <h3>Rivalries</h3>
+        <div className="rivalry-card rivalry-card--skeleton">
+          <span className="skeleton-bar skeleton-avatar" />
+          <div className="rivalry-info">
+            <div className="skeleton-bar skeleton-line-name" />
+            <div className="skeleton-bar skeleton-line-leader" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (rivalries.length === 0) {
     return (

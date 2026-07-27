@@ -8,6 +8,7 @@ import LoginScreen from "./components/LoginScreen.jsx";
 import GameHistory from "./components/GameHistory.jsx";
 import AnalysisModeChooser from "./components/AnalysisModeChooser.jsx";
 import Dashboard from "./components/Dashboard.jsx";
+import LoadingScreen from "./components/LoadingScreen.jsx";
 import { useAuth } from "./lib/auth.jsx";
 import { useAnalysisMode } from "./lib/analysisMode.jsx";
 import { saveGame, updateGameRecap, updateGameCouncilReport } from "./lib/games.js";
@@ -169,7 +170,7 @@ export default function App() {
       )}
       <h1>Chess by Alchemist</h1>
 
-      {modeGateLoading ? null : showModeChooser ? (
+      {modeGateLoading ? <LoadingScreen /> : showModeChooser ? (
         <AnalysisModeChooser />
       ) : phase === "home" ? (
         <Dashboard
